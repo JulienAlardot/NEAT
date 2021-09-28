@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import warnings
 
 import pydot as dot
 
@@ -51,4 +52,7 @@ def specimen_to_graph(specimen):
     out = f"{graph_name}.dot"
     with open(out, "wt") as outfile:
         outfile.write(graph.to_string())
-    os.system(f"dot {out}")
+    try:
+        os.system(f"dot {out}")
+    except:
+        warnings.warn("dot is not installed")
