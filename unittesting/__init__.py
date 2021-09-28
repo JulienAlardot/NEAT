@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import Mock
 
 from core import timeit
-from test_activations import TestActivationsMethods
-from test_genetic import TestConnGene, TestNodeGene, TestGenesHistory, TestSpecimen
+from unittesting.test_activations import TestActivationsMethods
+from unittesting.test_genetic import TestConnGene, TestNodeGene, TestGenesHistory, TestSpecimen
 
 
 class TestCoreFunctions(unittest.TestCase):
