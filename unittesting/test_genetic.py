@@ -163,7 +163,7 @@ class TestSpecimen(unittest.TestCase):
         spec.split_connection(0, 1, 0.5)
         spec.add_connection(3, 2, 0.5)
         # spec.vizualise()
-        self.assertEqual(tuple(np.array([0.5, 0.75])), tuple(spec.forward(1)))
+        self.assertEqual(tuple(np.array([0.5, 0.25])), tuple(spec.forward(1)))
         self.assertEqual(tuple(np.array([1, 1.5])), tuple(spec.forward(2)))
 
 
