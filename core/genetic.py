@@ -1,7 +1,10 @@
+import random
 from typing import Tuple
 
 import numpy as np
+
 from core import specimen_to_graph
+
 
 class ConnectionSubtype:
     INPUT = 0
@@ -182,7 +185,7 @@ class GenesHistory:
 
 
 class Specimen:
-    def __init__(self, history, input_size=1, output_size=1, generation = 1, id = 1):
+    def __init__(self, history, input_size=1, output_size=1, generation=1, id=1):
 
         if input_size < 1 or output_size < 1:
             raise ValueError(f"{'input_size' if input_size < 1 else 'output_size'} parameter minimum value is 1")
@@ -301,6 +304,41 @@ class Specimen:
     def vizualise(self):
         return specimen_to_graph(self)
 
+
+class Mutator:
+    def __init__(self):
+        pass
+
+    def __call__(self, specimen):
+        return specimen
+
+    @staticmethod
+    def mutation_switch_connection(connections, p):
+        for i in range(connections):
+            if random.random() < p:
+                connections[i][-1] = not connections[i][-1]
+        return connections
+
+    @staticmethod
+    def mutation_weight_change(connections, p, delta=1.0):
+        for i in range(connections):
+            if random.random() < p:
+                connections[i][-2] += random.uniform(-delta, delta)
+        return connections
+
+    @staticmethod
+    def mutation_split_connection(specimen, p):
+        connections = specimen.connections
+        for i in range(connections):
+            if random.random() < p:
+                specimen.split_connection(*connections[i][1:3])
+
+    @staticmethod
+    def mutation_add_connection(specimen, p):
+        connections = specimen.connections
+        for i in range(connections):
+            if random.random() < p:
+                specimen.add_connection(*connections[i][1:3], 1.0)
 
 if __name__ == "__main__":
     Specimen(GenesHistory(1, 2))

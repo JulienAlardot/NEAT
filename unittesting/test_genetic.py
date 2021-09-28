@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 
 from core import genetic as cg
+from core.genetic import Mutator
 
 
 class TestConnGene(unittest.TestCase):
@@ -164,6 +165,41 @@ class TestSpecimen(unittest.TestCase):
         spec.add_connection(3, 2, 0.5)
         self.assertEqual(tuple(np.array([0.5, 0.75])), tuple(spec.forward(1)))
         self.assertEqual(tuple(np.array([1, 1.5])), tuple(spec.forward(2)))
+
+
+class TestMutator(unittest.TestCase):
+    def test_attibutes_init(self):
+        raise NotImplementedError
+
+    def test_call_(self, specimen):
+        hist = cg.GenesHistory(1, 2)
+        spec = cg.Specimen(hist)
+        mutator = Mutator()
+        raise NotImplementedError
+
+    def test_mutation_switch_connection(self):
+        hist = cg.GenesHistory(1, 2)
+        spec = cg.Specimen(hist)
+        mutator = Mutator()
+        raise NotImplementedError
+
+    def test_mutation_weight_change(self):
+        hist = cg.GenesHistory(1, 2)
+        spec = cg.Specimen(hist)
+        mutator = Mutator()
+        raise NotImplementedError
+
+    def mutation_split_connection(self):
+        hist = cg.GenesHistory(1, 2)
+        spec = cg.Specimen(hist)
+        mutator = Mutator()
+        raise NotImplementedError
+
+    def mutation_add_connection(self):
+        hist = cg.GenesHistory(1, 2)
+        spec = cg.Specimen(hist)
+        mutator = Mutator()
+        raise NotImplementedError
 
 
 if __name__ == '__main__':
