@@ -53,6 +53,6 @@ def specimen_to_graph(specimen):
     with open(out, "wt") as outfile:
         outfile.write(graph.to_string())
     try:
-        os.system(f"dot {out}")
+        os.system(f"dot -Tsvg {out} > {out.replace('dot', 'svg')}")
     except:
         warnings.warn("dot is not installed")

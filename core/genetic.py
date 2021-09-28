@@ -267,17 +267,16 @@ class Specimen:
             print(self._nodes)
             old_outputs = outputs
             outputs = 0.
+            r_x = dict()
             for (in_node, out_node_raw, weight) in connections:
                 in_nodes = self._nodes[self._nodes[:, 0] == in_node, :]
                 out_node = self._nodes[self._nodes[:, 0] == out_node_raw, :][0]
-                x = 0.
+                r_x[out_node[0]] = r_x[out_node[0]] if out_node[0] in r_x else 0.
                 for node in in_nodes:
                     value = (node[1] * weight) / out_node[-1]
-                    x += value
-                    print(value, x)
-                self._nodes[self._nodes[:, 0] == out_node[0], 1] = x
+                    r_x[out_node[0]] += value
+                self._nodes[self._nodes[:, 0] == out_node[0], 1] = r_x[out_node[0]]
 
-                print(self._nodes)
             outputs = self._nodes[output_nodes].sum()
         return self._nodes[output_nodes, 1]
 
