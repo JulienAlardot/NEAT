@@ -40,7 +40,6 @@ def specimen_to_graph(specimen):
         new_node = dot.Node(str(node), color="gray")
         hidden_graph.add_node(new_node)
     graph.add_subgraph(hidden_graph)
-    print("\n" * 5)
     for id, in_node, out_node, weight, enabled in specimen.connections:
         edge = dot.Edge(str(in_node),
                         str(out_node),
@@ -48,7 +47,6 @@ def specimen_to_graph(specimen):
                         label=str(round(weight, 1)),
                         shape="vee")
         graph.add_edge(edge)
-    print("\n" * 5)
     out = f"{graph_name}.dot"
     with open(out, "wt") as outfile:
         outfile.write(graph.to_string())

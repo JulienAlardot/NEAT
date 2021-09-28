@@ -264,7 +264,6 @@ class Specimen:
         connections = tuple((in_node, out_node_raw, weight) for _, in_node, out_node_raw, weight, state
                             in self._connections if state)
         while abs(outputs - old_outputs) > treshold:
-            print(self._nodes)
             old_outputs = outputs
             outputs = 0.
             r_x = dict()
@@ -298,7 +297,6 @@ class Specimen:
         conn_id = self.history.add_connection(in_node, out_node)
         self._nodes[self._nodes[:, 0] == out_node, -1] += 1
         self._connections += [[conn_id, in_node, out_node, weight, True]]
-        print(self._nodes, self._connections)
 
     def vizualise(self):
         return specimen_to_graph(self)
