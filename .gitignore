@@ -234,3 +234,6 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# Custom
+unittesting/*.dot
+unittesting/*.svg
