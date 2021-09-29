@@ -254,7 +254,6 @@ class TestMutator(unittest.TestCase):
         self.assertEqual(spec.output_nodes_ids, spec2.output_nodes_ids)
 
     def test_mutation_add_connection(self):
-
         random.seed(0)
         hist = cg.GenesHistory(1, 2)
         spec = cg.Specimen(hist)

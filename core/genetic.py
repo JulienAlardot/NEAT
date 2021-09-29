@@ -284,14 +284,13 @@ class Specimen:
 
     def split_connection(self, input_node, output_node, weight=None):
         if not weight:
-            weight = [conn[3] for conn in self._connections if conn[1]==input_node and conn[2]==output_node][0]
+            weight = [conn[3] for conn in self._connections if conn[1] == input_node and conn[2] == output_node][0]
         conn1, conn2 = self.history.split_connection(input_node, output_node, weight)
         self._connections += [conn1 + [True], conn2 + [True]]
         if conn1[2] not in self._nodes[:, 0]:
             self._nodes = np.concatenate([self._nodes, [[conn1[2], 0., 1.]]])
         if conn1[2] not in self._hidden_nodes:
             self._hidden_nodes = tuple(sorted(self._hidden_nodes + (conn1[2],)))
-
 
         for conn_id, in_node, out_node, weight, state in self._connections:
 
@@ -302,12 +301,12 @@ class Specimen:
     def add_connection(self, in_node, out_node, weight=1.0):
         conn_id = self.history.add_connection(in_node, out_node)
 
-
         self._nodes[self._nodes[:, 0] == out_node, -1] += 1
         if not conn_id in (conn[0] for conn in self._connections):
             self._connections += [[conn_id, in_node, out_node, weight, True]]
         else:
             self._connections[conn_id][-1] = True
+
     def visualize(self):
         return specimen_to_graph(self)
 
@@ -318,7 +317,7 @@ class Mutator:
         self.mr_weight = mr_weight
         self.mr_split = mr_split
         self.mr_add = mr_add
-        self.mr_weight_delta= weight_delta
+        self.mr_weight_delta = weight_delta
 
     def __call__(self, specimen):
         spec = deepcopy(specimen)
