@@ -1,3 +1,4 @@
+import random
 import unittest
 
 import numpy as np
@@ -137,6 +138,7 @@ class TestSpecimen(unittest.TestCase):
         spec = cg.Specimen(hist)
         spec.split_connection(0, 1, 0.5)
         spec.add_connection(3, 2, 0.5)
+        spec.add_connection(3, 2, 0.5)
         self.assertEqual([[0, 0, 1, 1.0, False],
                           [1, 0, 2, 1.0, True],
                           [2, 0, 3, 1.0, True],
@@ -168,38 +170,110 @@ class TestSpecimen(unittest.TestCase):
 
 
 class TestMutator(unittest.TestCase):
-    def test_attibutes_init(self):
-        raise NotImplementedError
-
-    def test_call_(self, specimen):
+    def test_attibutes_init_call(self):
         hist = cg.GenesHistory(1, 2)
         spec = cg.Specimen(hist)
-        mutator = Mutator()
-        raise NotImplementedError
+        mutator = Mutator(0, 0, 0, 0)
+        spec2 = mutator(spec)
+        self.assertListEqual(spec.connections, spec2.connections)
+        self.assertEqual(spec.nodes.all(), spec2.nodes.all())
+        self.assertIs(spec.history, spec2.history)
+        self.assertEqual(spec.id, spec2.id)
+        self.assertTupleEqual(spec.hidden_nodes, spec2.hidden_nodes)
+        self.assertTupleEqual(spec.hidden_nodes_ids, spec2.hidden_nodes_ids)
+        self.assertTupleEqual(spec.input_nodes, spec2.input_nodes)
+        self.assertTupleEqual(spec.input_nodes_ids, spec2.input_nodes_ids)
+        self.assertTupleEqual(spec.output_nodes, spec2.output_nodes)
+        self.assertTupleEqual(spec.output_nodes_ids, spec2.output_nodes_ids)
 
     def test_mutation_switch_connection(self):
         hist = cg.GenesHistory(1, 2)
         spec = cg.Specimen(hist)
-        mutator = Mutator()
-        raise NotImplementedError
+        random.seed(0)
+        mutator = Mutator(0.79, 0, 0, 0)
+        spec2 = mutator(spec)
+        self.assertListEqual([[0, 0, 1, 1.0, True], [1, 0, 2, 1.0, False]], spec2.connections)
+
+        self.assertNotEqual(spec.connections, spec2.connections)
+        self.assertEqual(spec.nodes.all(), spec2.nodes.all())
+        self.assertIs(spec.history, spec2.history)
+        self.assertEqual(spec.id, spec2.id)
+        self.assertTupleEqual(spec.hidden_nodes, spec2.hidden_nodes)
+        self.assertTupleEqual(spec.hidden_nodes_ids, spec2.hidden_nodes_ids)
+        self.assertTupleEqual(spec.input_nodes, spec2.input_nodes)
+        self.assertTupleEqual(spec.input_nodes_ids, spec2.input_nodes_ids)
+        self.assertTupleEqual(spec.output_nodes, spec2.output_nodes)
+        self.assertTupleEqual(spec.output_nodes_ids, spec2.output_nodes_ids)
 
     def test_mutation_weight_change(self):
         hist = cg.GenesHistory(1, 2)
         spec = cg.Specimen(hist)
-        mutator = Mutator()
-        raise NotImplementedError
+        random.seed(0)
+        mutator = Mutator(0, 0.4, 0, 0)
+        spec2 = mutator(spec)
+        self.assertAlmostEqual(1.0 + (0.511 * 2 - 1), spec2.connections[1][-2], 2)
+        self.assertNotEqual(spec.connections, spec2.connections)
+        self.assertEqual(spec.nodes.all(), spec2.nodes.all())
+        self.assertIs(spec.history, spec2.history)
+        self.assertEqual(spec.id, spec2.id)
+        self.assertEqual(spec.hidden_nodes, spec2.hidden_nodes)
+        self.assertEqual(spec.hidden_nodes_ids, spec2.hidden_nodes_ids)
+        self.assertEqual(spec.input_nodes, spec2.input_nodes)
+        self.assertEqual(spec.input_nodes_ids, spec2.input_nodes_ids)
+        self.assertEqual(spec.output_nodes, spec2.output_nodes)
+        self.assertEqual(spec.output_nodes_ids, spec2.output_nodes_ids)
 
-    def mutation_split_connection(self):
+    def test_mutation_split_connection(self):
         hist = cg.GenesHistory(1, 2)
         spec = cg.Specimen(hist)
-        mutator = Mutator()
-        raise NotImplementedError
+        random.seed(0)
+        mutator = Mutator(0, 0, 0.5, 0)
+        spec2 = mutator(spec)
+        self.assertEqual([[0, 0, 1, 1.0, True],
+                          [1, 0, 2, 1.0, False],
+                          [2, 0, 3, 1.0, True],
+                          [3, 3, 2, 1.0, True]], spec2.connections)
 
-    def mutation_add_connection(self):
+        self.assertNotEqual(spec.connections, spec2.connections)
+        mutator = Mutator(0, 0.4, 0.7, 0)
         hist = cg.GenesHistory(1, 2)
         spec = cg.Specimen(hist)
-        mutator = Mutator()
-        raise NotImplementedError
+        spec2 = mutator(spec)
+        self.assertAlmostEqual(1 + 0.511, spec2.connections[0][3], 2)
+        self.assertEqual(1.0, spec2.connections[-2][3])
+        self.assertAlmostEqual(1 + 0.511, spec2.connections[-1][3], 2)
+        self.assertNotEqual(spec.connections, spec2.connections)
+        self.assertEqual(spec.nodes.all(), spec2.nodes.all())
+        self.assertIs(spec.history, spec2.history)
+        self.assertEqual(spec.id, spec2.id)
+        self.assertEqual((3,), spec2.hidden_nodes)
+        self.assertEqual((3,), spec2.hidden_nodes_ids)
+        self.assertEqual(spec.input_nodes, spec2.input_nodes)
+        self.assertEqual(spec.input_nodes_ids, spec2.input_nodes_ids)
+        self.assertEqual(spec.output_nodes, spec2.output_nodes)
+        self.assertEqual(spec.output_nodes_ids, spec2.output_nodes_ids)
+
+    def test_mutation_add_connection(self):
+
+        random.seed(0)
+        hist = cg.GenesHistory(1, 2)
+        spec = cg.Specimen(hist)
+        mutator = Mutator(0, 0.0, 0.5, 0.7)
+        spec2 = mutator(spec)
+        self.assertEqual([[0, 0, 1, 1.0, True],
+                          [1, 0, 2, 1.0, True],
+                          [2, 0, 3, 1.0, True],
+                          [3, 3, 2, 1.0, True]], spec2.connections)
+        self.assertNotEqual(spec.connections, spec2.connections)
+        self.assertEqual(spec.nodes.all(), spec2.nodes.all())
+        self.assertIs(spec.history, spec2.history)
+        self.assertEqual(spec.id, spec2.id)
+        self.assertEqual((3,), spec2.hidden_nodes)
+        self.assertEqual((3,), spec2.hidden_nodes_ids)
+        self.assertEqual(spec.input_nodes, spec2.input_nodes)
+        self.assertEqual(spec.input_nodes_ids, spec2.input_nodes_ids)
+        self.assertEqual(spec.output_nodes, spec2.output_nodes)
+        self.assertEqual(spec.output_nodes_ids, spec2.output_nodes_ids)
 
 
 if __name__ == '__main__':

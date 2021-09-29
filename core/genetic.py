@@ -1,4 +1,5 @@
 import random
+from copy import deepcopy
 from typing import Tuple
 
 import numpy as np
@@ -268,7 +269,6 @@ class Specimen:
                             in self._connections if state)
         while abs(outputs - old_outputs) > treshold:
             old_outputs = outputs
-            outputs = 0.
             r_x = dict()
             for (in_node, out_node_raw, weight) in connections:
                 in_nodes = self._nodes[self._nodes[:, 0] == in_node, :]
@@ -282,13 +282,16 @@ class Specimen:
             outputs = self._nodes[output_nodes].sum()
         return self._nodes[output_nodes, 1]
 
-    def split_connection(self, input_node, output_node, weight):
+    def split_connection(self, input_node, output_node, weight=None):
+        if not weight:
+            weight = [conn[3] for conn in self._connections if conn[1]==input_node and conn[2]==output_node][0]
         conn1, conn2 = self.history.split_connection(input_node, output_node, weight)
         self._connections += [conn1 + [True], conn2 + [True]]
         if conn1[2] not in self._nodes[:, 0]:
             self._nodes = np.concatenate([self._nodes, [[conn1[2], 0., 1.]]])
         if conn1[2] not in self._hidden_nodes:
             self._hidden_nodes = tuple(sorted(self._hidden_nodes + (conn1[2],)))
+
 
         for conn_id, in_node, out_node, weight, state in self._connections:
 
@@ -298,30 +301,50 @@ class Specimen:
 
     def add_connection(self, in_node, out_node, weight=1.0):
         conn_id = self.history.add_connection(in_node, out_node)
-        self._nodes[self._nodes[:, 0] == out_node, -1] += 1
-        self._connections += [[conn_id, in_node, out_node, weight, True]]
 
-    def vizualise(self):
+
+        self._nodes[self._nodes[:, 0] == out_node, -1] += 1
+        if not conn_id in (conn[0] for conn in self._connections):
+            self._connections += [[conn_id, in_node, out_node, weight, True]]
+        else:
+            self._connections[conn_id][-1] = True
+    def visualize(self):
         return specimen_to_graph(self)
 
 
 class Mutator:
-    def __init__(self):
-        pass
+    def __init__(self, mr_switch, mr_weight, mr_split, mr_add, weight_delta=1.0):
+        self.mr_switch = mr_switch
+        self.mr_weight = mr_weight
+        self.mr_split = mr_split
+        self.mr_add = mr_add
+        self.mr_weight_delta= weight_delta
 
     def __call__(self, specimen):
+        spec = deepcopy(specimen)
+        spec.history = specimen.history
+        specimen = spec
+        specimen = Mutator.mutation_switch_connection(specimen, self.mr_switch)
+
+        specimen.connections = Mutator.mutation_weight_change(specimen.connections, self.mr_weight,
+                                                              self.mr_weight_delta)
+        specimen = Mutator.mutation_split_connection(specimen, self.mr_split)
+        specimen = Mutator.mutation_add_connection(specimen, self.mr_add)
+
         return specimen
 
     @staticmethod
-    def mutation_switch_connection(connections, p):
-        for i in range(connections):
+    def mutation_switch_connection(specimen, p):
+        for i in range(len(specimen.connections)):
             if random.random() < p:
-                connections[i][-1] = not connections[i][-1]
-        return connections
+                specimen.connections[i][-1] = not specimen.connections[i][-1]
+                change = 1 if specimen.connections[i][-1] else -1
+                specimen.nodes[specimen.connections[i][2]][-1] += change
+        return specimen
 
     @staticmethod
     def mutation_weight_change(connections, p, delta=1.0):
-        for i in range(connections):
+        for i in range(len(connections)):
             if random.random() < p:
                 connections[i][-2] += random.uniform(-delta, delta)
         return connections
@@ -329,16 +352,19 @@ class Mutator:
     @staticmethod
     def mutation_split_connection(specimen, p):
         connections = specimen.connections
-        for i in range(connections):
+        for i in range(len(connections)):
             if random.random() < p:
                 specimen.split_connection(*connections[i][1:3])
+        return specimen
 
     @staticmethod
     def mutation_add_connection(specimen, p):
         connections = specimen.connections
-        for i in range(connections):
+        for i in range(len(connections)):
             if random.random() < p:
                 specimen.add_connection(*connections[i][1:3], 1.0)
+        return specimen
+
 
 if __name__ == "__main__":
     Specimen(GenesHistory(1, 2))
