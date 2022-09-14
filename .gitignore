@@ -1,0 +1,5 @@
+
+*.pyc
+/data/template.sqlite
+
+/test/test.sqlite
