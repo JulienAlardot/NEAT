@@ -35,6 +35,7 @@ class Database:
         PRAGMA writable_schema = 0;
         VACUUM;
         PRAGMA INTEGRITY_CHECK;
+        PRAGMA foreign_keys = ON;
         """)
         self._con.commit()
 
@@ -62,16 +63,17 @@ class Database:
             
         CREATE TABLE connection_historical (
                 id INTEGER PRIMARY KEY,
-                in_node int NOT NULL,
-                out_node int NOT NULL CHECK (in_node != out_node),
-                FOREIGN KEY (in_node)
+                in_node_id int NOT NULL,
+                out_node_id int NOT NULL,
+                FOREIGN KEY (in_node_id)
                     REFERENCES node (id)
                     ON DELETE RESTRICT 
                     ON UPDATE RESTRICT, 
-                FOREIGN KEY (out_node)
+                FOREIGN KEY (out_node_id)
                     REFERENCES node (id)
                     ON DELETE RESTRICT
-                    ON UPDATE RESTRICT
+                    ON UPDATE RESTRICT,
+                CHECK (in_node_id != out_node_id)
             );
                 
         CREATE TABLE connection (
@@ -131,7 +133,6 @@ class Database:
         CREATE TABLE individual (
             id INTEGER PRIMARY KEY,
             genotype_id INTEGER UNIQUE NOT NULL,
-            specie_id INTEGER NOT NULL,
             score INTEGER DEFAULT 0 NOT NULL,
             generation INTEGER NOT NULL DEFAULT 1,
             FOREIGN KEY (genotype_id)
@@ -172,8 +173,13 @@ class Database:
         """)
 
     def execute(self, query):
-        return self._cursor.execute(query).fetchall()
-
-    def insert(self, query):
-        self.execute(query)
-        self._con.commit()
+        query += '' if query.endswith(';') else ';'
+        query = query.replace('!= NULL', 'IS NOT NULL')
+        query = query.replace('= NULL', 'IS NULL')
+        try:
+            res = self._cursor.execute(query)
+        except sql.IntegrityError as sql_error:
+            raise ValueError from sql_error
+        if "INSERT INTO" in query:
+            self._con.commit()
+        return res.fetchall()

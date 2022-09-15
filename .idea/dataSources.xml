@@ -2,7 +2,7 @@
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
     <data-source source="LOCAL" name="test" uuid="db145d20-d3ba-4502-aae6-02ff751d3195">
-      <driver-ref>fa955777-c399-4bb8-81fe-3914845d5039</driver-ref>
+      <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
       <jdbc-url>jdbc:sqlite:D:\Utilisateurs\Julien\Documents\Programming\NEAT\test\test.sqlite</jdbc-url>
@@ -14,7 +14,7 @@
       </libraries>
     </data-source>
     <data-source source="LOCAL" name="template" uuid="5076abb8-99c1-4505-88a6-9153e5e67019">
-      <driver-ref>578f22b5-4087-4915-a04d-cb830a6f65a0</driver-ref>
+      <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
       <jdbc-url>jdbc:sqlite:D:\Utilisateurs\Julien\Documents\Programming\NEAT\data\template.sqlite</jdbc-url>
