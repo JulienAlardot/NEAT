@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from core.classutils import Connection, HistoricalConnection, Node, NodeTypes
+from core.classutils import Connection, Genotype, HistoricalConnection, Node, NodeTypes
 from core.database import Database
 
 
@@ -111,3 +111,60 @@ class TestConnection(TestCase):
         self.assertNotEqual(c1.id, c2.id)
         self.assertNotEqual(c1.genotype_id, c2.genotype_id)
         self.assertEqual(c1.historical_id, c2.historical_id)
+
+
+class TestGenotype(TestCase):
+
+    def setUp(self):
+        self._db = Database('test/test', override=True)
+
+    def test_init(self):
+        node_i = Node(self._db, 'input')
+        node_i2 = Node(self._db, 'input')
+        node_i3 = Node(self._db, 'input')
+        node_o = Node(self._db, 'output')
+        node_o2 = Node(self._db, 'output')
+        node_o3 = Node(self._db, 'output')
+        node_o4 = Node(self._db, 'output')
+        with self.assertRaises(ValueError):
+            Genotype(self._db, genotype_id=1)
+        with self.assertRaises(ValueError):
+            Genotype(self._db)
+        with self.assertRaises(ValueError):
+            Genotype(self._db, node_ids={1, 2, })
+        connections_dict = ({
+                                'in_node_id': 1,
+                                'out_node_id': 2,
+                                'is_enabled': False,
+                                'weight': 0.5,
+                            },)
+        with self.assertRaises(ValueError):
+            Genotype(self._db, connection_ids=connections_dict)
+
+        gen = Genotype(self._db, node_ids={1, 2, }, connection_ids=connections_dict)
+        self.assertEqual(1, HistoricalConnection(self._db, 1).id)
+        self.assertEqual(1, Connection(self._db, historical_connection_id=1, genotype_id=gen.id).id)
+        self.assertFalse(Connection(self._db, connection_id=1, genotype_id=gen.id).is_enabled)
+        self.assertEqual(0.5, Connection(self._db, connection_id=1, genotype_id=gen.id).weight)
+        self.assertEqual(1, Connection(self._db, connection_id=1, genotype_id=gen.id).in_node)
+        self.assertEqual(2, Connection(self._db, connection_id=1, genotype_id=gen.id).out_node)
+        self.assertEqual(1, gen.id)
+        self.assertSetEqual({1, }, gen.connection_ids)
+        self.assertSetEqual({1, 2, }, gen.node_ids)
+        gen2 = Genotype(self._db, node_ids={1, 2, }, connection_ids=connections_dict)
+        connections_dict2 = ({
+                                 'in_node_id': 1,
+                                 'out_node_id': 2,
+                                 'is_enabled': False,
+                                 'weight': 0.5,
+                             }, {
+                                 'in_node_id': 3,
+                                 'out_node_id': 7,
+                                 'is_enabled': True,
+                                 'weight': 1,
+                             },)
+        gen3 = Genotype(self._db, node_ids={1, 2, 3, 4, 5, 6, 7}, connection_ids=connections_dict2)
+        with self.assertRaises(TypeError):
+            gen ^ {6, }
+        self.assertEqual(1.0, gen ^ gen2)
+        self.assertEqual(1 / 3, gen ^ gen3)

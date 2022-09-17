@@ -102,12 +102,25 @@ class HistoricalConnection:
 class Connection(HistoricalConnection):
     def __init__(self, db, historical_connection_id=None, in_node_id=None, out_node_id=None,
                  genotype_id=None, connection_id=None, weight=None, is_enabled=None):
-        super().__init__(db, historical_connection_id, in_node_id, out_node_id)
-        self.historical_id = int(self.id)
-        self.id = None
-
+        self._db = db
+        conn_id = None
         if not connection_id and not genotype_id:
             raise ValueError("Must specify a genotype_id or a connection_id")
+
+        if connection_id:
+            res = self._db.execute(f"""
+            SELECT id, genotype_id, weight, is_enabled, historical_id
+            FROM connection
+            WHERE id = {connection_id}
+            ORDER BY id DESC
+            LIMIT 1
+            """)
+            if not res:
+                raise ValueError("Specified connection_id doesn't exist")
+            conn_id, self.genotype_id, self._weight, self._is_enabled, historical_connection_id = res[0]
+        super().__init__(db, historical_connection_id, in_node_id, out_node_id)
+        self.historical_id = int(self.id)
+        self.id = conn_id
 
         if connection_id:
             res = self._db.execute(f"""
@@ -195,3 +208,83 @@ class Connection(HistoricalConnection):
         WHERE id = {self.id}
         """)
         self._weight = value
+
+
+class Genotype:
+    def __init__(self, db, genotype_id=None, node_ids=None, connection_ids=None):
+        self._db = db
+
+        if not (genotype_id or (node_ids and connection_ids)):
+            raise ValueError("Must specify either an existing genotype_id or both node_ids and connection_ids")
+
+        if genotype_id:
+            res = self._db.execute(f"""
+            SELECT id
+            FROM genotype
+            WHERE id = {genotype_id}
+            ORDER BY id DESC
+            LIMIT 1
+            """)
+            if not res:
+                raise ValueError("Specified genotype_id doesn't exist")
+            self.id = genotype_id
+            res = self._db.execute(f"""
+            SELECT connection.id
+            FROM connection
+            WHERE connection.genotype_id = {genotype_id}
+            """)
+            self.connection_ids = set((sub_res[0] for sub_res in res))
+            res = self._db.execute(f"""
+            SELECT node_id
+            FROM genotype_node_rel
+            WHERE genotype_node_rel.genotype_id = {genotype_id}
+            """)
+            self.node_ids = set((sub_res[0] for sub_res in res))
+        else:
+            id = self._db.execute("""
+            SELECT id
+            FROM genotype
+            ORDER BY id DESC
+            LIMIT 1
+            """)
+            self.id = id[0][0] + 1 if id else 1
+            self._db.execute(f"""
+            INSERT INTO genotype (id)
+                VALUES ({self.id})            
+            """)
+            node_values = ",\n".join((f"({self.id}, {node_id})" for node_id in sorted(node_ids)))
+            self._db.execute(f"""
+            INSERT INTO genotype_node_rel (genotype_id, node_id)
+                VALUES {node_values} 
+            """)
+            res = self._db.execute(f"""
+            SELECT node_id
+            FROM genotype_node_rel
+            WHERE genotype_node_rel.genotype_id = {self.id}
+            """)
+            self.node_ids = set((row[0] for row in res))
+            self.connection_ids = set()
+            for connection in connection_ids:
+                connection.update({'genotype_id': self.id})
+                self.connection_ids.add(Connection(self._db, **connection).id)
+
+    @property
+    def historical_connection_ids(self):
+        connection_ids = ', '.join((str(c_id) for c_id in self.connection_ids))
+        res = self._db.execute(f"""
+        SELECT historical_id
+        FROM connection
+        WHERE id IN ({connection_ids})
+        """)
+        return set((row[0] for row in res))
+
+    def __xor__(self, other):
+        if not isinstance(other, Genotype):
+            raise TypeError(
+                    "Cannot use xor operator between an instance of 'Genotype' and an instance of another class"
+            )
+        diff_nodes = len(other.node_ids ^ self.node_ids)
+        total_nodes = max(len(other.node_ids), len(self.node_ids))
+        diff_connections = len(other.historical_connection_ids ^ self.historical_connection_ids)
+        total_connections = max(len(other.historical_connection_ids), len(self.historical_connection_ids))
+        return (total_nodes + total_connections - diff_nodes - diff_connections) / (total_nodes + total_connections)
