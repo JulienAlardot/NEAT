@@ -161,6 +161,6 @@ class Database:
             res = self._cursor.execute(query)
         except sql.IntegrityError as sql_error:
             raise ValueError from sql_error
-        if "INSERT INTO" in query:
+        if "INSERT INTO" in query or "UPDATE" in query:
             self._con.commit()
         return res.fetchall()
