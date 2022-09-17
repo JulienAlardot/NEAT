@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from core.classutils import HistoricalConnection, Node, NodeTypes
+from core.classutils import Connection, HistoricalConnection, Node, NodeTypes
 from core.database import Database
 
 
@@ -68,3 +68,46 @@ class TestHistoricalConnection(TestCase):
 
         with self.assertRaises(ValueError):
             HistoricalConnection(self._db, in_node_id=1, out_node_id=1)
+
+
+class TestConnection(TestCase):
+    def setUp(self):
+        self._db = Database('test/test', override=True)
+
+    def test_init(self):
+        self._db.execute("""
+        INSERT INTO genotype (id)
+            VALUES (1), (2)
+        """)
+
+        with self.assertRaises(ValueError):
+            Connection(self._db, connection_id=1)
+
+        with self.assertRaises(ValueError):
+            Connection(self._db, genotype_id=200)
+
+        with self.assertRaises(ValueError):
+            Connection(self._db)
+        with self.assertRaises(ValueError):
+            Connection(self._db, in_node_id=100, out_node_id=200)
+
+        Node(self._db, node_type=NodeTypes.input)
+        Node(self._db, node_type="OUTPUT")
+        Connection(self._db, in_node_id=1, out_node_id=2, genotype_id=1)
+
+        self.assertEqual(1, Connection(self._db, in_node_id=1, out_node_id=2, genotype_id=1).id)
+        self.assertTrue(Connection(self._db, in_node_id=1, out_node_id=2, genotype_id=1).is_enabled)
+        Connection(self._db, in_node_id=1, out_node_id=2, genotype_id=1).is_enabled = False
+        Connection(self._db, in_node_id=1, out_node_id=2, genotype_id=1).weight = 0.5
+
+        self.assertFalse(Connection(self._db, in_node_id=1, out_node_id=2, genotype_id=1).is_enabled)
+        self.assertEqual(0.5, Connection(self._db, in_node_id=1, out_node_id=2, genotype_id=1).weight)
+
+        with self.assertRaises(ValueError):
+            Connection(self._db, in_node_id=1, out_node_id=1, genotype_id=1)
+
+        c1 = Connection(self._db, genotype_id=1, in_node_id=1, out_node_id=2)
+        c2 = Connection(self._db, genotype_id=2, in_node_id=1, out_node_id=2)
+        self.assertNotEqual(c1.id, c2.id)
+        self.assertNotEqual(c1.genotype_id, c2.genotype_id)
+        self.assertEqual(c1.historical_id, c2.historical_id)
