@@ -50,3 +50,47 @@ class Node:
             self.id = res[0][0]
             self.node_type = node_type
             self.connection_historical = connection_historical_id
+
+
+class HistoricalConnection:
+    def __init__(self, db, historical_connection_id=None, in_node_id=None, out_node_id=None):
+        self._db = db
+
+        if historical_connection_id:
+            res = self._db.execute(f"""
+            SELECT id, in_node_id, out_node_id, id  FROM connection_historical WHERE id = {historical_connection_id} 
+            LIMIT 1
+            """)
+            if not res:
+                raise ValueError('No HistoricalConnection exists with that id')
+            self.id, self.in_node, self.out_node, self.connection_id = res[0]
+        elif in_node_id and out_node_id:
+            if in_node_id == out_node_id:
+                raise ValueError("in_node_id and out_node_id must be different nodes")
+
+            res = self._db.execute(f"""
+            SELECT id, in_node_id, out_node_id  
+                FROM connection_historical 
+                WHERE in_node_id = {in_node_id} AND out_node_id = {out_node_id}
+                LIMIT 1
+            """)
+            if res:
+                self.id, self.in_node, self.out_node = res[0]
+            else:
+                self._db.execute(f"""
+                INSERT INTO connection_historical (in_node_id, out_node_id)
+                    VALUES ({in_node_id}, {out_node_id})
+                """)
+                res = self._db.execute(f"""
+                    SELECT id
+                    FROM connection_historical
+                    WHERE in_node_id = {in_node_id} AND out_node_id = {out_node_id}
+                    ORDER BY id DESC
+                    LIMIT 1
+                """)
+                if not res:
+                    raise ValueError("Incorrect values for in_node_id and/or out_node_id parameters")
+                self.id = res[0][0]
+        else:
+            raise ValueError(
+                    "A Connection must be given either an existing historical_connection_id or in and out_node_id")

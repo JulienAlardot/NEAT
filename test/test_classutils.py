@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from core.classutils import Node, NodeTypes
+from core.classutils import HistoricalConnection, Node, NodeTypes
 from core.database import Database
 
 
@@ -35,3 +35,25 @@ class TestNode(TestCase):
 
         with self.assertRaises(ValueError):
             Node(self._db, node_id=4)
+
+
+class TestHistoricalConnection(TestCase):
+    def setUp(self):
+        self._db = Database('test/test', override=True)
+
+    def test_init(self):
+        with self.assertRaises(ValueError):
+            HistoricalConnection(self._db, historical_connection_id=1)
+        with self.assertRaises(ValueError):
+            HistoricalConnection(self._db)
+        with self.assertRaises(ValueError):
+            HistoricalConnection(self._db, in_node_id=100, out_node_id=200)
+
+        Node(self._db, node_type=NodeTypes.input)
+        Node(self._db, node_type="OUTPUT")
+        HistoricalConnection(self._db, in_node_id=1, out_node_id=2)
+
+        self.assertEqual(1, HistoricalConnection(self._db, in_node_id=1, out_node_id=2).id)
+
+        with self.assertRaises(ValueError):
+            HistoricalConnection(self._db, in_node_id=1, out_node_id=1)
