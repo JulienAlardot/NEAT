@@ -58,12 +58,12 @@ class HistoricalConnection:
 
         if historical_connection_id:
             res = self._db.execute(f"""
-            SELECT id, in_node_id, out_node_id, id  FROM connection_historical WHERE id = {historical_connection_id} 
+            SELECT id, in_node_id, out_node_id FROM connection_historical WHERE id = {historical_connection_id} 
             LIMIT 1
             """)
             if not res:
                 raise ValueError('No HistoricalConnection exists with that id')
-            self.id, self.in_node, self.out_node, self.connection_id = res[0]
+            self.id, self.in_node, self.out_node = res[0]
         elif in_node_id and out_node_id:
             if in_node_id == out_node_id:
                 raise ValueError("in_node_id and out_node_id must be different nodes")
@@ -91,6 +91,8 @@ class HistoricalConnection:
                 if not res:
                     raise ValueError("Incorrect values for in_node_id and/or out_node_id parameters")
                 self.id = res[0][0]
+                self.in_node = in_node_id
+                self.out_node = out_node_id
         else:
             raise ValueError(
                     "A Connection must be given either an existing historical_connection_id or in and out_node_id")
