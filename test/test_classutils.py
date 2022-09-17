@@ -36,6 +36,17 @@ class TestNode(TestCase):
         with self.assertRaises(ValueError):
             Node(self._db, node_id=4)
 
+    def test_historical_connection_rel(self):
+        n1 = Node(self._db, node_type=NodeTypes.input)
+        n2 = Node(self._db, node_type=NodeTypes.output)
+        hc = HistoricalConnection(self._db, in_node_id=n1.id, out_node_id=n2.id)
+        hc2 = HistoricalConnection(self._db, historical_connection_id=hc.id)
+        n3 = Node(self._db, connection_historical_id=hc.id)
+        self.assertEqual(hc.id, hc2.id)
+        self.assertEqual(hc.in_node, hc2.in_node)
+        self.assertEqual(hc.out_node, hc2.out_node)
+        self.assertEqual(1, n3.connection_historical)
+
 
 class TestHistoricalConnection(TestCase):
     def setUp(self):

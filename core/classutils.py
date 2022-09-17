@@ -34,9 +34,10 @@ class Node:
                 if not res:
                     raise ValueError('The given connection_historical_id does not exists')
 
+            node_type = node_type or NodeTypes.hidden
             self._db.execute(f"""
                 INSERT INTO node (node_type_id, connection_historical_id)
-                    VALUES ({node_type}, {connection_historical_id or 'NULL'})
+                    VALUES ({node_type}, {connection_historical_id or "NULL"})
             """)
             res = self._db.execute(f"""
                 SELECT id
