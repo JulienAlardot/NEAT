@@ -75,36 +75,27 @@ class Database:
                     ON UPDATE RESTRICT,
                 CHECK (in_node_id != out_node_id)
             );
-                
-        CREATE TABLE connection (
-            id INTEGER PRIMARY KEY,
-            historical_id INTEGER NOT NULL,
-            is_enabled BOOLEAN DEFAULT TRUE NOT NULL,
-            weight FLOAT DEFAULT 1.0 NOT NULL,
-            FOREIGN KEY (historical_id)
-                REFERENCES connection_historical (id)
-                ON DELETE RESTRICT
-                ON UPDATE RESTRICT
-            );
             
         CREATE TABLE genotype (
             id INTEGER PRIMARY KEY
             );
-        
-        CREATE TABLE connection_genotype_rel (
+                
+        CREATE TABLE connection (
             id INTEGER PRIMARY KEY,
-            connection_id INTEGER NOT NULL,
+            historical_id INTEGER NOT NULL,
             genotype_id INTEGER NOT NULL,
-            UNIQUE (connection_id, genotype_id),
-            FOREIGN KEY (connection_id)
-                REFERENCES connection (id)
-                    ON DELETE CASCADE
-                    ON UPDATE CASCADE,
+            is_enabled BOOLEAN DEFAULT TRUE NOT NULL,
+            weight FLOAT DEFAULT 1.0 NOT NULL,
+            FOREIGN KEY (historical_id)
+                REFERENCES connection_historical (id)
+                ON DELETE CASCADE 
+                ON UPDATE CASCADE ,
             FOREIGN KEY (genotype_id)
                 REFERENCES genotype (id)
-                    ON DELETE CASCADE 
-                    ON UPDATE CASCADE                
-            );    
+                ON DELETE CASCADE
+                ON UPDATE CASCADE,
+            UNIQUE (historical_id, genotype_id)
+            );
         
         CREATE TABLE genotype_node_rel (
             id INTEGER PRIMARY KEY,
@@ -132,29 +123,19 @@ class Database:
         
         CREATE TABLE individual (
             id INTEGER PRIMARY KEY,
-            genotype_id INTEGER UNIQUE NOT NULL,
+            genotype_id INTEGER NOT NULL,
+            specie_id INTEGER NOT NULL,
             score INTEGER DEFAULT 0 NOT NULL,
             generation INTEGER NOT NULL DEFAULT 1,
             FOREIGN KEY (genotype_id)
                 REFERENCES genotype(id)
-                ON DELETE RESTRICT
-                ON UPDATE RESTRICT
-            );
-        
-        CREATE TABLE individual_specie_rel (
-            id INTEGER PRIMARY KEY,
-            individual_id INTEGER NOT NULL,
-            specie_id INTEGER NOT NULL,
-            UNIQUE (specie_id, individual_id),
-            FOREIGN KEY (individual_id)
-                REFERENCES individual (id)
-                    ON DELETE CASCADE 
-                    ON UPDATE CASCADE,
+                ON DELETE CASCADE 
+                ON UPDATE CASCADE ,
             FOREIGN KEY (specie_id)
                 REFERENCES specie (id)
-                    ON DELETE CASCADE
-                    ON UPDATE CASCADE
-            );   
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+            );
         
         CREATE TABLE individual_population_rel (
             id INTEGER PRIMARY KEY,
