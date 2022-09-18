@@ -10,6 +10,25 @@ class BaseTestCase(TestCase):
         self._db.execute("""INSERT INTO model_metadata DEFAULT VALUES""")
 
 
+class TestMetaData(TestCase):
+    def setUp(self):
+        self._db = Database('test/test', override=True)
+
+    def test_metadata_lacking(self):
+        self._db.execute("""INSERT INTO generation DEFAULT VALUES""")
+        for node_type in (NodeTypes.input, NodeTypes.output):
+            Node(self._db, node_type)
+        with self.assertRaises(ValueError):
+            ind_dicts = ({
+                             'genotype_kwargs': {
+                                 "node_ids": {1, 2},
+                                 "connections_dict": (
+                                     {'in_node_id': 1, 'out_node_id': 2, },)
+                             }
+                         },)
+            Population(self._db, generation_id=1, individual_dicts=ind_dicts)
+
+
 class TestNodeTypes(TestCase):
     def test_attributes(self):
         self.assertEqual(1, NodeTypes.input)
