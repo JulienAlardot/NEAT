@@ -192,11 +192,7 @@ class Connection(HistoricalConnection):
 
     @weight.setter
     def weight(self, value: float):
-        self._db.execute(f"""
-        UPDATE connection
-            SET weight = {value}
-        WHERE id = {self.id}
-        """)
+        self._db.execute(f"""UPDATE connection SET weight = {value} WHERE id = {self.id}""")
         self._weight = value
 
 
@@ -297,7 +293,7 @@ class Individual:
             """)
             if not res:
                 raise ValueError("Specified individual_id doesn't exist")
-            self.id, self.genotype_id, self.specie_id, self.score, self.population_id = res[0]
+            self.id, self.genotype_id, self.specie_id, self._score, self.population_id = res[0]
 
         else:
             test_exists = {"population": population_id}
@@ -368,7 +364,7 @@ class Individual:
 
             self.id = res[0][0]
             self.population_id = population_id
-            self.score = score
+            self._score = score
             self.specie_id = specie_id
             self.genotype_id = genotype_id
 
@@ -383,3 +379,12 @@ class Individual:
         if not res:
             raise ValueError("There must be at least one row in model_metadata table to fetch data from")
         return res[0][0]
+
+    @property
+    def score(self):
+        return self._score
+
+    @score.setter
+    def score(self, value: int):
+        self._db.execute(f"""UPDATE individual SET score = {value} WHERE id = {self.id}""")
+        self._score = value
