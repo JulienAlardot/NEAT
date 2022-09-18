@@ -59,7 +59,9 @@ class HistoricalConnection:
 
         if historical_connection_id:
             res = self._db.execute(f"""
-            SELECT id, in_node_id, out_node_id FROM connection_historical WHERE id = {historical_connection_id} 
+            SELECT id, in_node_id, out_node_id 
+            FROM connection_historical 
+            WHERE id = {historical_connection_id} 
             LIMIT 1
             """)
             if not res:
@@ -229,13 +231,11 @@ class Genotype:
             """)
             self.node_ids = set((sub_res[0] for sub_res in res))
         else:
-            id = self._db.execute("""
-            SELECT id
+            res = self._db.execute("""
+            SELECT MAX(id)
             FROM genotype
-            ORDER BY id DESC
-            LIMIT 1
             """)
-            self.id = id[0][0] + 1 if id else 1
+            self.id = (res[0][0] or 0) + 1
             self._db.execute(f"""
             INSERT INTO genotype (id)
                 VALUES ({self.id})            
@@ -345,12 +345,10 @@ class Individual:
                     specie_id = best_specie_id
             if not specie_id:
                 res = self._db.execute("""
-                SELECT id
+                SELECT MAX(id)
                 FROM specie
-                ORDER BY id DESC
-                LIMIT 1
                 """)
-                specie_id = res[0][0] + 1 if res else 1
+                specie_id = (res[0][0] or 0) + 1
                 self._db.execute(f"""INSERT INTO specie (id) VALUES ({specie_id})""")
             self._db.execute(f"""
             INSERT INTO individual (genotype_id, specie_id, score, population_id)
