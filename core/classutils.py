@@ -276,3 +276,100 @@ class Genotype:
         diff_connections = len(other.historical_connection_ids ^ self.historical_connection_ids)
         total_connections = max(len(other.historical_connection_ids), len(self.historical_connection_ids))
         return (total_nodes + total_connections - diff_nodes - diff_connections) / (total_nodes + total_connections)
+
+
+class Individual:
+    def __init__(self, db, individual_id=None, population_id=None, genotype_id=None, genotype_kwargs=None,
+                 specie_id=None, score=None, specie_treshold=0.0):
+        self._db = db
+        score = score or 0
+        if not individual_id and (not population_id or not (genotype_id or genotype_kwargs)):
+            raise ValueError(
+                    "Must specify an individual_id, or a population_id and either an a genotype_id or a genotype_kwargs"
+            )
+        if individual_id:
+            res = self._db.execute(f"""
+                SELECT id, genotype_id, specie_id, score, population_id
+                FROM individual
+                WHERE id = {individual_id}
+                ORDER BY id DESC
+                LIMIT 1
+            """)
+            if not res:
+                raise ValueError("Specified individual_id doesn't exist")
+            self.id, self.genotype_id, self.specie_id, self.score, self.population_id = res[0]
+
+        else:
+            test_exists = {"population": population_id}
+            if specie_id:
+                test_exists["specie"] = specie_id
+
+            if genotype_id:
+                test_exists["genotype"] = genotype_id
+
+            for table, value in test_exists.items():
+                res = self._db.execute(f"""
+                    SELECT id
+                    FROM {table}
+                    WHERE id = {value}
+                    ORDER BY id DESC
+                    LIMIT 1
+                """)
+                if not res:
+                    raise ValueError(f"Specified {table}_id doesn't exist")
+
+            if not genotype_id and genotype_kwargs:
+                genotype_id = Genotype(self._db, **genotype_kwargs).id
+
+            if not specie_id:  # Find specie
+                genotype = Genotype(self._db, genotype_id=genotype_id)
+                res = self._db.execute(f"""
+                SELECT gen.id AS genotype_id,
+                       specie.id AS specie_id
+                FROM specie
+                INNER JOIN individual AS ind ON specie.id = ind.specie_id
+                INNER JOIN genotype AS gen ON ind.genotype_id = gen.id
+                WHERE gen.id != {genotype_id} AND ind.population_id = {population_id}
+                """)
+                if res:
+                    best_specie_id = None
+                    best_result = min(1., max(0., 1. - specie_treshold))
+                    for other_id, specie_id in (row for row in res):
+                        other_genotype = Genotype(self._db, genotype_id=other_id)
+                        genotypes_similarity = genotype ^ other_genotype
+                        if genotypes_similarity > best_result:
+                            best_specie_id = specie_id
+                            best_result = genotypes_similarity
+                        if best_result == 1.:  # Best score so no need to continue
+                            break
+                    specie_id = best_specie_id
+            if not specie_id:
+                res = self._db.execute("""
+                SELECT id
+                FROM specie
+                ORDER BY id DESC
+                LIMIT 1
+                """)
+                specie_id = res[0][0] + 1 if res else 1
+                self._db.execute(f"""INSERT INTO specie (id) VALUES ({specie_id})""")
+            self._db.execute(f"""
+            INSERT INTO individual (genotype_id, specie_id, score, population_id)
+                VALUES ({genotype_id}, {specie_id}, {score}, {population_id})
+            """)
+            res = self._db.execute(f"""
+            SELECT id
+            FROM individual
+            WHERE ( genotype_id = {genotype_id} 
+                AND specie_id = {specie_id}
+                AND score = {score}
+                AND population_id = {population_id}
+                )    
+            ORDER BY id DESC
+            LIMIT 1
+            """)
+
+            self.id = res[0][0]
+            self.population_id = population_id
+            self.score = score
+            self.specie_id = specie_id
+            self.genotype_id = genotype_id

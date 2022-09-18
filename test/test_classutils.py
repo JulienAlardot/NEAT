@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from core.classutils import Connection, Genotype, HistoricalConnection, Node, NodeTypes
+from core.classutils import Connection, Genotype, HistoricalConnection, Individual, Node, NodeTypes
 from core.database import Database
 
 
@@ -168,3 +168,84 @@ class TestGenotype(TestCase):
             gen ^ {6, }
         self.assertEqual(1.0, gen ^ gen2)
         self.assertEqual(1 / 3, gen ^ gen3)
+
+
+class TestIndividual(TestCase):
+
+    def setUp(self):
+        self._db = Database('test/test', override=True)
+
+    def test_init(self):
+        n1 = Node(self._db, NodeTypes.input)
+        n2 = Node(self._db, NodeTypes.output)
+        n3 = Node(self._db, NodeTypes.output)
+        genotype_kwargs = {
+            "node_ids": {n1.id, n2.id, n3.id},
+            "connections_dict": ({
+                                     'in_node_id': 1,
+                                     'out_node_id': 2,
+                                     'is_enabled': False,
+                                     'weight': 0.5,
+                                 }, {
+                                     'in_node_id': 1,
+                                     'out_node_id': 3,
+                                     'is_enabled': True,
+                                     'weight': 1,
+                                 },)
+        }
+
+        with self.assertRaises(ValueError):
+            Individual(self._db)
+        with self.assertRaises(ValueError):
+            Individual(self._db, individual_id=1)
+        with self.assertRaises(ValueError):
+            Individual(self._db, population_id=1)
+        with self.assertRaises(ValueError):
+            Individual(self._db, genotype_kwargs=genotype_kwargs)
+        self._db.execute("""INSERT INTO generation (id) VALUES (1), (2)""")
+        self._db.execute("""INSERT INTO population (id, generation_id) VALUES (1, 1), (2, 2)""")
+        ind1 = Individual(self._db, population_id=1, genotype_kwargs=genotype_kwargs)
+        self.assertEqual(1, ind1.id)
+        self.assertEqual(0, ind1.score)
+        self.assertEqual(1, ind1.specie_id)
+        self.assertEqual(1, ind1.genotype_id)
+        self.assertEqual(1, ind1.population_id)
+        ind2 = Individual(self._db, population_id=1, genotype_kwargs=genotype_kwargs, score=10, specie_treshold=0.5)
+        self.assertEqual(2, ind2.id)
+        self.assertEqual(10, ind2.score)
+        self.assertEqual(1, ind2.specie_id)
+        self.assertEqual(2, ind2.genotype_id)
+        self.assertEqual(1, ind2.population_id)
+        genotype_kwargs_2 = {
+            "node_ids": {1, 2},
+            "connections_dict": (
+                {
+                    'in_node_id': 1,
+                    'out_node_id': 2,
+                    'is_enabled': True,
+                    'weight': 1.0,
+                },
+            ),
+        }
+        ind3 = Individual(self._db, population_id=1, genotype_kwargs=genotype_kwargs_2, specie_treshold=0.3)
+        self.assertEqual(3, ind3.id)
+        self.assertEqual(0, ind3.score)
+        self.assertEqual(2, ind3.specie_id)
+        self.assertEqual(3, ind3.genotype_id)
+        self.assertEqual(1, ind3.population_id)
+        ind4 = Individual(self._db, population_id=2, genotype_kwargs={
+            "node_ids": {1, 2},
+            "connections_dict": (
+                {
+                    'in_node_id': 1,
+                    'out_node_id': 2,
+                    'is_enabled': True,
+                    'weight': 1.0,
+                },
+            ),
+        }, specie_treshold=0.3)
+        self.assertEqual(4, ind4.id)
+        self.assertEqual(0, ind4.score)
+        self.assertEqual(3, ind4.specie_id)
+        self.assertEqual(4, ind4.genotype_id)
+        self.assertEqual(2, ind4.population_id)
