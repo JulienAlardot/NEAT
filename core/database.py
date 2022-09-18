@@ -148,21 +148,6 @@ class Database:
                 ON DELETE CASCADE
                 ON UPDATE CASCADE
             );
-        
-        CREATE TABLE individual_population_rel (
-            id INTEGER PRIMARY KEY,
-            individual_id INTEGER NOT NULL,
-            population_id INTEGER NOT NULL,
-            UNIQUE (individual_id, population_id),
-            FOREIGN KEY (individual_id)
-                REFERENCES individual (id)
-                    ON DELETE CASCADE 
-                    ON UPDATE CASCADE,
-            FOREIGN KEY (population_id)
-                REFERENCES population (id)
-                    ON DELETE CASCADE
-                    ON UPDATE CASCADE
-            );
             
         CREATE TABLE model_metadata (
             id INTEGER PRIMARY KEY,
