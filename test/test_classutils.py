@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from core.classutils import Connection, Genotype, HistoricalConnection, Individual, Node, NodeTypes
+from core.classutils import Connection, Genotype, HistoricalConnection, Individual, Node, NodeTypes, Population
 from core.database import Database
 
 
@@ -237,3 +237,79 @@ class TestIndividual(BaseTestCase):
         self.assertEqual(3, ind4.specie_id)
         self.assertEqual(4, ind4.genotype_id)
         self.assertEqual(2, ind4.population_id)
+
+
+class TestPopulation(BaseTestCase):
+    def test_init(self):
+        n1 = Node(self._db, NodeTypes.input)
+        n2 = Node(self._db, NodeTypes.input)
+        n3 = Node(self._db, NodeTypes.output)
+        with self.assertRaises(ValueError):
+            Population(self._db, population_id=1)
+        with self.assertRaises(ValueError):
+            Population(self._db, generation_id=1, individual_dicts=[''] * 100)
+        self._db.execute("""INSERT INTO generation VALUES (1), (2)""")
+        with self.assertRaises(SystemError):
+            Population(self._db, generation_id=1, individual_dicts=[''])
+        self._db.execute("""INSERT INTO model_metadata (population_size) VALUES (3)""")
+        individual_dicts = (
+            {
+                'genotype_kwargs': {
+                    "node_ids": {n1.id, n2.id, n3.id},
+                    "connections_dict": ({
+                                             'in_node_id': 1,
+                                             'out_node_id': 2,
+                                             'is_enabled': False,
+                                             'weight': 0.5,
+                                         }, {
+                                             'in_node_id': 1,
+                                             'out_node_id': 3,
+                                             'is_enabled': True,
+                                             'weight': 1,
+                                         },)
+                }
+            }, {
+                'genotype_kwargs': {
+                    "node_ids": {n1.id, n2.id, n3.id},
+                    "connections_dict": ({
+                                             'in_node_id': 1,
+                                             'out_node_id': 2,
+                                             'is_enabled': False,
+                                             'weight': 0.5,
+                                         }, {
+                                             'in_node_id': 1,
+                                             'out_node_id': 3,
+                                             'is_enabled': True,
+                                             'weight': 1,
+                                         },)
+                }
+            }, {
+                'genotype_kwargs':
+                    {
+                        "node_ids": {1, 2},
+                        "connections_dict": (
+                            {
+                                'in_node_id': 1,
+                                'out_node_id': 2,
+                                'is_enabled': True,
+                                'weight': 1.0,
+                            },
+                        ),
+                    },
+                "score": 10
+            },
+        )
+        pop = Population(self._db, generation_id=1, individual_dicts=individual_dicts)
+        self.assertEqual(1, pop.id)
+        self.assertEqual(3, pop.model_pop_size)
+        self.assertSetEqual({1, 2, 3}, pop.individual_ids)
+        self.assertSetEqual({1, 2}, pop.species)
+        self.assertEqual(1, pop.generation_id)
+        self.assertEqual(10, pop.best_score)
+        pop2 = Population(self._db, generation_id=2, individual_dicts=individual_dicts)
+        self.assertEqual(2, pop2.id)
+        self.assertEqual(3, pop2.model_pop_size)
+        self.assertSetEqual({4, 5, 6}, pop2.individual_ids)
+        self.assertSetEqual({3, 4}, pop2.species)
+        self.assertEqual(2, pop2.generation_id)
+        self.assertEqual(10, pop2.best_score)
