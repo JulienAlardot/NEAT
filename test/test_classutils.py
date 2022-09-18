@@ -58,15 +58,15 @@ class TestNode(BaseTestCase):
             Node(self._db, node_id=4)
 
     def test_historical_connection_rel(self):
-        n1 = Node(self._db, node_type=NodeTypes.input)
-        n2 = Node(self._db, node_type=NodeTypes.output)
-        hc = HistoricalConnection(self._db, in_node_id=n1.id, out_node_id=n2.id)
-        hc2 = HistoricalConnection(self._db, historical_connection_id=hc.id)
-        n3 = Node(self._db, connection_historical_id=hc.id)
-        self.assertEqual(hc.id, hc2.id)
-        self.assertEqual(hc.in_node, hc2.in_node)
-        self.assertEqual(hc.out_node, hc2.out_node)
-        self.assertEqual(1, n3.connection_historical)
+        node1 = Node(self._db, node_type=NodeTypes.input)
+        node2 = Node(self._db, node_type=NodeTypes.output)
+        hc = HistoricalConnection(self._db, in_node_id=node1.id, out_node_id=node2.id)
+        hconnection2 = HistoricalConnection(self._db, historical_connection_id=hc.id)
+        node3 = Node(self._db, connection_historical_id=hc.id)
+        self.assertEqual(hc.id, hconnection2.id)
+        self.assertEqual(hc.in_node, hconnection2.in_node)
+        self.assertEqual(hc.out_node, hconnection2.out_node)
+        self.assertEqual(1, node3.connection_historical)
 
 
 class TestHistoricalConnection(BaseTestCase):
@@ -121,11 +121,11 @@ class TestConnection(BaseTestCase):
         with self.assertRaises(ValueError):
             Connection(self._db, in_node_id=1, out_node_id=1, genotype_id=1)
 
-        c1 = Connection(self._db, genotype_id=1, in_node_id=1, out_node_id=2)
-        c2 = Connection(self._db, genotype_id=2, in_node_id=1, out_node_id=2)
-        self.assertNotEqual(c1.id, c2.id)
-        self.assertNotEqual(c1.genotype_id, c2.genotype_id)
-        self.assertEqual(c1.historical_id, c2.historical_id)
+        connection1 = Connection(self._db, genotype_id=1, in_node_id=1, out_node_id=2)
+        connection2 = Connection(self._db, genotype_id=2, in_node_id=1, out_node_id=2)
+        self.assertNotEqual(connection1.id, connection2.id)
+        self.assertNotEqual(connection1.genotype_id, connection2.genotype_id)
+        self.assertEqual(connection1.historical_id, connection2.historical_id)
 
 
 class TestGenotype(BaseTestCase):
@@ -162,7 +162,7 @@ class TestGenotype(BaseTestCase):
         self.assertEqual(1, gen.id)
         self.assertSetEqual({1, }, gen.connection_ids)
         self.assertSetEqual({1, 2, }, gen.node_ids)
-        gen2 = Genotype(self._db, node_ids={1, 2, }, connections_dict=connections_dict)
+        genode2 = Genotype(self._db, node_ids={1, 2, }, connections_dict=connections_dict)
         connections_dict2 = ({
                                  'in_node_id': 1,
                                  'out_node_id': 2,
@@ -174,20 +174,20 @@ class TestGenotype(BaseTestCase):
                                  'is_enabled': True,
                                  'weight': 1,
                              },)
-        gen3 = Genotype(self._db, node_ids={1, 2, 3, 4, 5, 6, 7}, connections_dict=connections_dict2)
+        genode3 = Genotype(self._db, node_ids={1, 2, 3, 4, 5, 6, 7}, connections_dict=connections_dict2)
         with self.assertRaises(TypeError):
             gen ^ {6, }
-        self.assertEqual(1.0, gen ^ gen2)
-        self.assertEqual(1 / 3, gen ^ gen3)
+        self.assertEqual(1.0, gen ^ genode2)
+        self.assertEqual(1 / 3, gen ^ genode3)
 
 
 class TestIndividual(BaseTestCase):
     def test_init(self):
-        n1 = Node(self._db, NodeTypes.input)
-        n2 = Node(self._db, NodeTypes.output)
-        n3 = Node(self._db, NodeTypes.output)
+        node1 = Node(self._db, NodeTypes.input)
+        node2 = Node(self._db, NodeTypes.output)
+        node3 = Node(self._db, NodeTypes.output)
         genotype_kwargs = {
-            "node_ids": {n1.id, n2.id, n3.id},
+            "node_ids": {node1.id, node2.id, node3.id},
             "connections_dict": ({
                                      'in_node_id': 1,
                                      'out_node_id': 2,
@@ -260,9 +260,9 @@ class TestIndividual(BaseTestCase):
 
 class TestPopulation(BaseTestCase):
     def test_init(self):
-        n1 = Node(self._db, NodeTypes.input)
-        n2 = Node(self._db, NodeTypes.input)
-        n3 = Node(self._db, NodeTypes.output)
+        node1 = Node(self._db, NodeTypes.input)
+        node2 = Node(self._db, NodeTypes.input)
+        node3 = Node(self._db, NodeTypes.output)
         with self.assertRaises(ValueError):
             Population(self._db, population_id=1)
         with self.assertRaises(ValueError):
@@ -274,7 +274,7 @@ class TestPopulation(BaseTestCase):
         individual_dicts = (
             {
                 'genotype_kwargs': {
-                    "node_ids": {n1.id, n2.id, n3.id},
+                    "node_ids": {node1.id, node2.id, node3.id},
                     "connections_dict": ({
                                              'in_node_id': 1,
                                              'out_node_id': 2,
@@ -289,7 +289,7 @@ class TestPopulation(BaseTestCase):
                 }
             }, {
                 'genotype_kwargs': {
-                    "node_ids": {n1.id, n2.id, n3.id},
+                    "node_ids": {node1.id, node2.id, node3.id},
                     "connections_dict": ({
                                              'in_node_id': 1,
                                              'out_node_id': 2,
