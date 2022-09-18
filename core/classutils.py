@@ -199,11 +199,11 @@ class Connection(HistoricalConnection):
 
 
 class Genotype:
-    def __init__(self, db, genotype_id=None, node_ids=None, connection_ids=None):
+    def __init__(self, db, genotype_id=None, node_ids=None, connections_dict=None):
         self._db = db
 
-        if not (genotype_id or (node_ids and connection_ids)):
-            raise ValueError("Must specify either an existing genotype_id or both node_ids and connection_ids")
+        if not (genotype_id or (node_ids and connections_dict)):
+            raise ValueError("Must specify either an existing genotype_id or both node_ids and connections_dict")
 
         if genotype_id:
             res = self._db.execute(f"""
@@ -252,7 +252,7 @@ class Genotype:
             """)
             self.node_ids = set((row[0] for row in res))
             self.connection_ids = set()
-            for connection in connection_ids:
+            for connection in connections_dict:
                 connection.update({'genotype_id': self.id})
                 self.connection_ids.add(Connection(self._db, **connection).id)
 

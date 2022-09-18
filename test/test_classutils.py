@@ -139,9 +139,9 @@ class TestGenotype(TestCase):
                                 'weight': 0.5,
                             },)
         with self.assertRaises(ValueError):
-            Genotype(self._db, connection_ids=connections_dict)
+            Genotype(self._db, connections_dict=connections_dict)
 
-        gen = Genotype(self._db, node_ids={1, 2, }, connection_ids=connections_dict)
+        gen = Genotype(self._db, node_ids={1, 2, }, connections_dict=connections_dict)
         self.assertEqual(1, HistoricalConnection(self._db, 1).id)
         self.assertEqual(1, Connection(self._db, historical_connection_id=1, genotype_id=gen.id).id)
         self.assertFalse(Connection(self._db, connection_id=1, genotype_id=gen.id).is_enabled)
@@ -151,7 +151,7 @@ class TestGenotype(TestCase):
         self.assertEqual(1, gen.id)
         self.assertSetEqual({1, }, gen.connection_ids)
         self.assertSetEqual({1, 2, }, gen.node_ids)
-        gen2 = Genotype(self._db, node_ids={1, 2, }, connection_ids=connections_dict)
+        gen2 = Genotype(self._db, node_ids={1, 2, }, connections_dict=connections_dict)
         connections_dict2 = ({
                                  'in_node_id': 1,
                                  'out_node_id': 2,
@@ -163,7 +163,7 @@ class TestGenotype(TestCase):
                                  'is_enabled': True,
                                  'weight': 1,
                              },)
-        gen3 = Genotype(self._db, node_ids={1, 2, 3, 4, 5, 6, 7}, connection_ids=connections_dict2)
+        gen3 = Genotype(self._db, node_ids={1, 2, 3, 4, 5, 6, 7}, connections_dict=connections_dict2)
         with self.assertRaises(TypeError):
             gen ^ {6, }
         self.assertEqual(1.0, gen ^ gen2)
