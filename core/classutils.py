@@ -122,19 +122,7 @@ class Connection(HistoricalConnection):
         self.historical_id = int(self.id)
         self.id = conn_id
 
-        if connection_id:
-            res = self._db.execute(f"""
-            SELECT id, genotype_id, weight, is_enabled
-            FROM connection
-            WHERE id = {connection_id}
-            ORDER BY id DESC
-            LIMIT 1
-            """)
-            if not res:
-                raise ValueError("Specified connection_id doesn't exist")
-            self.id, self.genotype_id, self._weight, self._is_enabled = res[0]
-
-        else:
+        if not connection_id:
             res = self._db.execute(f"""
             SELECT id
             FROM genotype
