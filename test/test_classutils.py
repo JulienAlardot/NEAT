@@ -4,18 +4,20 @@ from core.classutils import Connection, Genotype, HistoricalConnection, Individu
 from core.database import Database
 
 
-class TestNodeTypes(TestCase):
+class BaseTestCase(TestCase):
+    def setUp(self):
+        self._db = Database('test/test', override=True)
+        self._db.execute("""INSERT INTO model_metadata DEFAULT VALUES""")
 
+
+class TestNodeTypes(TestCase):
     def test_attributes(self):
         self.assertEqual(1, NodeTypes.input)
         self.assertEqual(2, NodeTypes.hidden)
         self.assertEqual(3, NodeTypes.output)
 
 
-class TestNode(TestCase):
-    def setUp(self):
-        self._db = Database('test/test', override=True)
-
+class TestNode(BaseTestCase):
     def test_init(self):
         with self.assertRaises(ValueError):
             Node(self._db, node_id=1)
@@ -48,10 +50,7 @@ class TestNode(TestCase):
         self.assertEqual(1, n3.connection_historical)
 
 
-class TestHistoricalConnection(TestCase):
-    def setUp(self):
-        self._db = Database('test/test', override=True)
-
+class TestHistoricalConnection(BaseTestCase):
     def test_init(self):
         with self.assertRaises(ValueError):
             HistoricalConnection(self._db, historical_connection_id=1)
@@ -70,10 +69,7 @@ class TestHistoricalConnection(TestCase):
             HistoricalConnection(self._db, in_node_id=1, out_node_id=1)
 
 
-class TestConnection(TestCase):
-    def setUp(self):
-        self._db = Database('test/test', override=True)
-
+class TestConnection(BaseTestCase):
     def test_init(self):
         self._db.execute("""
         INSERT INTO genotype (id)
@@ -113,11 +109,7 @@ class TestConnection(TestCase):
         self.assertEqual(c1.historical_id, c2.historical_id)
 
 
-class TestGenotype(TestCase):
-
-    def setUp(self):
-        self._db = Database('test/test', override=True)
-
+class TestGenotype(BaseTestCase):
     def test_init(self):
         node_i = Node(self._db, 'input')
         node_i2 = Node(self._db, 'input')
@@ -170,11 +162,7 @@ class TestGenotype(TestCase):
         self.assertEqual(1 / 3, gen ^ gen3)
 
 
-class TestIndividual(TestCase):
-
-    def setUp(self):
-        self._db = Database('test/test', override=True)
-
+class TestIndividual(BaseTestCase):
     def test_init(self):
         n1 = Node(self._db, NodeTypes.input)
         n2 = Node(self._db, NodeTypes.output)
@@ -210,7 +198,7 @@ class TestIndividual(TestCase):
         self.assertEqual(1, ind1.specie_id)
         self.assertEqual(1, ind1.genotype_id)
         self.assertEqual(1, ind1.population_id)
-        ind2 = Individual(self._db, population_id=1, genotype_kwargs=genotype_kwargs, score=10, specie_treshold=0.5)
+        ind2 = Individual(self._db, population_id=1, genotype_kwargs=genotype_kwargs, score=10)
         self.assertEqual(2, ind2.id)
         self.assertEqual(10, ind2.score)
         self.assertEqual(1, ind2.specie_id)
@@ -227,7 +215,7 @@ class TestIndividual(TestCase):
                 },
             ),
         }
-        ind3 = Individual(self._db, population_id=1, genotype_kwargs=genotype_kwargs_2, specie_treshold=0.3)
+        ind3 = Individual(self._db, population_id=1, genotype_kwargs=genotype_kwargs_2)
         self.assertEqual(3, ind3.id)
         self.assertEqual(0, ind3.score)
         self.assertEqual(2, ind3.specie_id)
@@ -243,7 +231,7 @@ class TestIndividual(TestCase):
                     'weight': 1.0,
                 },
             ),
-        }, specie_treshold=0.3)
+        })
         self.assertEqual(4, ind4.id)
         self.assertEqual(0, ind4.score)
         self.assertEqual(3, ind4.specie_id)

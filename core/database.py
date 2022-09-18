@@ -163,6 +163,12 @@ class Database:
                     ON DELETE CASCADE
                     ON UPDATE CASCADE
             );
+            
+        CREATE TABLE model_metadata (
+            id INTEGER PRIMARY KEY,
+            speciation_tresh FLOAT DEFAULT 0.25 NOT NULL,
+            population_size INTEGER DEFAULT 100 NOT NULL
+        );
         """)
 
     def execute(self, query):

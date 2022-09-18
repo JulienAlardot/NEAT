@@ -280,7 +280,7 @@ class Genotype:
 
 class Individual:
     def __init__(self, db, individual_id=None, population_id=None, genotype_id=None, genotype_kwargs=None,
-                 specie_id=None, score=None, specie_treshold=0.0):
+                 specie_id=None, score=None):
         self._db = db
         score = score or 0
         if not individual_id and (not population_id or not (genotype_id or genotype_kwargs)):
@@ -333,7 +333,7 @@ class Individual:
                 """)
                 if res:
                     best_specie_id = None
-                    best_result = min(1., max(0., 1. - specie_treshold))
+                    best_result = min(1., max(0., 1. - self.speciation_treshold))
                     for other_id, specie_id in (row for row in res):
                         other_genotype = Genotype(self._db, genotype_id=other_id)
                         genotypes_similarity = genotype ^ other_genotype
@@ -373,3 +373,15 @@ class Individual:
             self.score = score
             self.specie_id = specie_id
             self.genotype_id = genotype_id
+
+    @property
+    def speciation_treshold(self):
+        res = self._db.execute("""
+        SELECT speciation_tresh
+        FROM model_metadata
+        ORDER BY id DESC
+        LIMIT 1
+        """)
+        if not res:
+            raise ValueError("There must be at least one row in model_metadata table to fetch data from")
+        return res[0][0]
