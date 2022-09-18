@@ -112,13 +112,21 @@ class Database:
                     ON UPDATE CASCADE
             );    
         
+        CREATE TABLE generation (
+            id INTEGER PRIMARY KEY
+            );
+        
         CREATE TABLE specie (
             id INTEGER PRIMARY KEY
             );
         
         CREATE TABLE population (
             id INTEGER PRIMARY KEY,
-            generation_id INTEGER NOT NULL
+            generation_id INTEGER NOT NULL,
+            FOREIGN KEY (generation_id)
+                REFERENCES generation (id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
             );
         
         CREATE TABLE individual (
@@ -126,13 +134,17 @@ class Database:
             genotype_id INTEGER NOT NULL,
             specie_id INTEGER NOT NULL,
             score INTEGER DEFAULT 0 NOT NULL,
-            generation INTEGER NOT NULL DEFAULT 1,
+            population_id INTEGER NOT NULL,
             FOREIGN KEY (genotype_id)
                 REFERENCES genotype(id)
                 ON DELETE CASCADE 
                 ON UPDATE CASCADE ,
             FOREIGN KEY (specie_id)
                 REFERENCES specie (id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE,
+            FOREIGN KEY (population_id)
+                REFERENCES population (id)
                 ON DELETE CASCADE
                 ON UPDATE CASCADE
             );
