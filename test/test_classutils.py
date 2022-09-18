@@ -325,10 +325,11 @@ class TestPopulation(BaseTestCase):
         self.assertSetEqual({1, 2}, pop.species)
         self.assertEqual(1, pop.generation_id)
         self.assertEqual(10, pop.best_score)
+        del individual_dicts[-1]["score"]
         pop2 = Population(self._db, generation_id=2, individual_dicts=individual_dicts)
         self.assertEqual(2, pop2.id)
         self.assertEqual(3, pop2.model_pop_size)
         self.assertSetEqual({4, 5, 6}, pop2.individual_ids)
         self.assertSetEqual({3, 4}, pop2.species)
         self.assertEqual(2, pop2.generation_id)
-        self.assertEqual(10, pop2.best_score)
+        self.assertEqual(0, pop2.best_score)
