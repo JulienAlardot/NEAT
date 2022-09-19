@@ -330,11 +330,11 @@ class Individual:
                 if res:
                     best_specie_id = None
                     best_result = min(1., max(0., 1. - self.speciation_treshold))
-                    for other_id, specie_id in (row for row in res):
+                    for other_id, other_specie_id in res:
                         other_genotype = Genotype(self._db, genotype_id=other_id)
                         genotypes_similarity = genotype ^ other_genotype
                         if genotypes_similarity > best_result:
-                            best_specie_id = specie_id
+                            best_specie_id = other_specie_id
                             best_result = genotypes_similarity
                         if best_result == 1.:  # Best score so no need to continue
                             break
