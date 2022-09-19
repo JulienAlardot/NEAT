@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from core.classutils import Connection, Genotype, HistoricalConnection, Individual, Node, NodeTypes, Population
+from core.classutils import Connection, Genotype, HistoricalConnection, Individual, Node, NodeTypes, Population, Specie
 from core.database import Database
 
 
@@ -333,3 +333,38 @@ class TestPopulation(BaseTestCase):
         self.assertSetEqual({3, 4}, pop2.species)
         self.assertEqual(2, pop2.generation_id)
         self.assertEqual(0, pop2.best_score)
+
+
+class TestSpecie(BaseTestCase):
+    def test_init(self):
+        with self.assertRaises(ValueError):
+            Specie(self._db, 1)
+
+        node1 = Node(self._db, NodeTypes.input)
+        node2 = Node(self._db, NodeTypes.input)
+        node3 = Node(self._db, NodeTypes.output)
+        self._db.execute("""INSERT INTO model_metadata (population_size) VALUES (1)""")
+        self._db.execute("""INSERT INTO generation DEFAULT VALUES""")
+        individual_dicts = (
+            {
+                'genotype_kwargs': {
+                    "node_ids": {node1.id, node2.id, node3.id},
+                    "connections_dict": ({
+                                             'in_node_id': 1,
+                                             'out_node_id': 2,
+                                             'is_enabled': False,
+                                             'weight': 0.5,
+                                         }, {
+                                             'in_node_id': 1,
+                                             'out_node_id': 3,
+                                             'is_enabled': True,
+                                             'weight': 1,
+                                         },)
+                }
+            },
+        )
+        pop = Population(self._db, generation_id=1, individual_dicts=individual_dicts)
+        ind1 = Individual(self._db, pop.individual_ids.pop())
+        specie = Specie(self._db, ind1.specie_id)
+        self.assertEqual(1, specie.id)
+        self.assertEqual(2, Specie(self._db).id)

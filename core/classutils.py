@@ -340,12 +340,7 @@ class Individual:
                             break
                     specie_id = best_specie_id
             if not specie_id:
-                res = self._db.execute("""
-                SELECT MAX(id)
-                FROM specie
-                """)
-                specie_id = (res[0][0] or 0) + 1
-                self._db.execute(f"""INSERT INTO specie (id) VALUES ({specie_id})""")
+                specie_id = Specie(self._db).id
             self._db.execute(f"""
             INSERT INTO individual (genotype_id, specie_id, score, population_id)
                 VALUES ({genotype_id}, {specie_id}, {score}, {population_id})
@@ -472,3 +467,23 @@ class Population:
         WHERE individual.population_id = {self.id}
         """)
         return res[0][0] or 0
+
+
+class Specie:
+    def __init__(self, db, specie_id=None):
+        self._db = db
+        if specie_id:
+            res = self._db.execute(f"""
+            SELECT id
+            FROM specie
+            WHERE id = {specie_id}
+            ORDER BY id DESC
+            LIMIT 1
+            """)
+            if not res:
+                raise ValueError("Specified specie_id doesn't exist")
+            self.id = res[0][0]
+        else:
+            self._db.execute("""INSERT INTO specie DEFAULT VALUES""")
+            res = self._db.execute("""SELECT MAX(id) FROM specie""")
+            self.id = res[0][0]
