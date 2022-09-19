@@ -347,7 +347,7 @@ class TestSpecie(BaseTestCase):
         node1 = Node(self._db, NodeTypes.input)
         node2 = Node(self._db, NodeTypes.input)
         node3 = Node(self._db, NodeTypes.output)
-        self._db.execute("""INSERT INTO model_metadata (population_size) VALUES (1)""")
+        self._db.execute("""INSERT INTO model_metadata (population_size) VALUES (3)""")
         Generation(self._db)
         individual_dicts = (
             {
@@ -365,13 +365,49 @@ class TestSpecie(BaseTestCase):
                                              'weight': 1,
                                          },)
                 }
+            }, {
+                'genotype_kwargs': {
+                    "node_ids": {node1.id, node2.id, node3.id},
+                    "connections_dict": ({
+                                             'in_node_id': 1,
+                                             'out_node_id': 2,
+                                             'is_enabled': False,
+                                             'weight': 0.5,
+                                         }, {
+                                             'in_node_id': 1,
+                                             'out_node_id': 3,
+                                             'is_enabled': True,
+                                             'weight': 1,
+                                         },)
+                }
+            }, {
+                'genotype_kwargs':
+                    {
+                        "node_ids": {1, 2},
+                        "connections_dict": (
+                            {
+                                'in_node_id': 1,
+                                'out_node_id': 2,
+                                'is_enabled': True,
+                                'weight': 1.0,
+                            },
+                        ),
+                    },
+                "score": 10
             },
         )
         pop = Population(self._db, generation_id=1, individual_dicts=individual_dicts)
-        ind1 = Individual(self._db, pop.individual_ids.pop())
-        specie = Specie(self._db, ind1.specie_id)
-        self.assertEqual(1, specie.id)
-        self.assertEqual(2, Specie(self._db).id)
+        ind1 = Individual(self._db, tuple(sorted(pop.individual_ids))[0])
+        ind2 = Individual(self._db, tuple(sorted(pop.individual_ids))[-1])
+        specie1 = Specie(self._db, ind1.specie_id)
+        specie2 = Specie(self._db, ind2.specie_id)
+        self.assertEqual(1, specie1.id)
+        self.assertEqual(0, specie1.best_score)
+        self.assertSetEqual({1, 2}, specie1.individual_ids)
+        self.assertEqual(2, specie2.id)
+        self.assertEqual(10, specie2.best_score)
+        self.assertSetEqual({3}, specie2.individual_ids)
+        self.assertEqual(3, Specie(self._db).id)
 
 
 class TestGeneration(BaseTestCase):
@@ -382,7 +418,7 @@ class TestGeneration(BaseTestCase):
         node1 = Node(self._db, NodeTypes.input)
         node2 = Node(self._db, NodeTypes.input)
         node3 = Node(self._db, NodeTypes.output)
-        self._db.execute("""INSERT INTO model_metadata (population_size) VALUES (1)""")
+        self._db.execute("""INSERT INTO model_metadata (population_size) VALUES (3)""")
         Generation(self._db)
         individual_dicts = (
             {
@@ -400,9 +436,40 @@ class TestGeneration(BaseTestCase):
                                              'weight': 1,
                                          },)
                 }
+            }, {
+                'genotype_kwargs': {
+                    "node_ids": {node1.id, node2.id, node3.id},
+                    "connections_dict": ({
+                                             'in_node_id': 1,
+                                             'out_node_id': 2,
+                                             'is_enabled': False,
+                                             'weight': 0.5,
+                                         }, {
+                                             'in_node_id': 1,
+                                             'out_node_id': 3,
+                                             'is_enabled': True,
+                                             'weight': 1,
+                                         },)
+                }
+            }, {
+                'genotype_kwargs':
+                    {
+                        "node_ids": {1, 2},
+                        "connections_dict": (
+                            {
+                                'in_node_id': 1,
+                                'out_node_id': 2,
+                                'is_enabled': True,
+                                'weight': 1.0,
+                            },
+                        ),
+                    },
+                "score": 10
             },
         )
         pop = Population(self._db, generation_id=1, individual_dicts=individual_dicts)
         gen = Generation(self._db, pop.generation_id)
         self.assertEqual(1, gen.id)
+        self.assertSetEqual({1, 2, 3}, gen.individual_ids)
+        self.assertEqual(10, gen.best_score)
         self.assertEqual(2, Generation(self._db).id)
