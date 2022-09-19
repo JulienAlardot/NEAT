@@ -1,6 +1,9 @@
 from unittest import TestCase
 
-from core.classutils import Connection, Genotype, HistoricalConnection, Individual, Node, NodeTypes, Population, Specie
+from core.classutils import (
+    Connection, Generation, Genotype, HistoricalConnection, Individual, Node, NodeTypes,
+    Population, Specie,
+)
 from core.database import Database
 
 
@@ -267,7 +270,7 @@ class TestPopulation(BaseTestCase):
             Population(self._db, population_id=1)
         with self.assertRaises(ValueError):
             Population(self._db, generation_id=1, individual_dicts=[''] * 100)
-        self._db.execute("""INSERT INTO generation VALUES (1), (2)""")
+        Generation(self._db)
         with self.assertRaises(SystemError):
             Population(self._db, generation_id=1, individual_dicts=[''])
         self._db.execute("""INSERT INTO model_metadata (population_size) VALUES (3)""")
@@ -326,6 +329,7 @@ class TestPopulation(BaseTestCase):
         self.assertEqual(1, pop.generation_id)
         self.assertEqual(10, pop.best_score)
         del individual_dicts[-1]["score"]
+        Generation(self._db)
         pop2 = Population(self._db, generation_id=2, individual_dicts=individual_dicts)
         self.assertEqual(2, pop2.id)
         self.assertEqual(3, pop2.model_pop_size)
@@ -344,7 +348,7 @@ class TestSpecie(BaseTestCase):
         node2 = Node(self._db, NodeTypes.input)
         node3 = Node(self._db, NodeTypes.output)
         self._db.execute("""INSERT INTO model_metadata (population_size) VALUES (1)""")
-        self._db.execute("""INSERT INTO generation DEFAULT VALUES""")
+        Generation(self._db)
         individual_dicts = (
             {
                 'genotype_kwargs': {
@@ -368,3 +372,37 @@ class TestSpecie(BaseTestCase):
         specie = Specie(self._db, ind1.specie_id)
         self.assertEqual(1, specie.id)
         self.assertEqual(2, Specie(self._db).id)
+
+
+class TestGeneration(BaseTestCase):
+    def test_init(self):
+        with self.assertRaises(ValueError):
+            Generation(self._db, 1)
+
+        node1 = Node(self._db, NodeTypes.input)
+        node2 = Node(self._db, NodeTypes.input)
+        node3 = Node(self._db, NodeTypes.output)
+        self._db.execute("""INSERT INTO model_metadata (population_size) VALUES (1)""")
+        Generation(self._db)
+        individual_dicts = (
+            {
+                'genotype_kwargs': {
+                    "node_ids": {node1.id, node2.id, node3.id},
+                    "connections_dict": ({
+                                             'in_node_id': 1,
+                                             'out_node_id': 2,
+                                             'is_enabled': False,
+                                             'weight': 0.5,
+                                         }, {
+                                             'in_node_id': 1,
+                                             'out_node_id': 3,
+                                             'is_enabled': True,
+                                             'weight': 1,
+                                         },)
+                }
+            },
+        )
+        pop = Population(self._db, generation_id=1, individual_dicts=individual_dicts)
+        gen = Generation(self._db, pop.generation_id)
+        self.assertEqual(1, gen.id)
+        self.assertEqual(2, Generation(self._db).id)

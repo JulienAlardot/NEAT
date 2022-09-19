@@ -413,17 +413,10 @@ class Population:
                 raise SystemError("Size inconsistency between loaded individual_ids size and model metadata")
 
         else:
+            generation_id = Generation(self._db, generation_id=generation_id).id
             pop_size = self.model_pop_size  # Only need to fetch it once
-
             if pop_size != len(individual_dicts):
                 raise SystemError("Size inconsistency between loaded individual_dicts size and model metadata")
-
-            res = self._db.execute(f"""
-            SELECT id from generation  WHERE id = {generation_id} ORDER BY id DESC LIMIT 1
-            """)
-            if not res:
-                raise ValueError("Specified generation_id doesn't exist")
-
             self._db.execute(f"""INSERT INTO population (generation_id) VALUES ({generation_id})""")
             res = self._db.execute(f"""
             SELECT id from population WHERE generation_id={generation_id} ORDER BY id DESC LIMIT 1
@@ -486,4 +479,24 @@ class Specie:
         else:
             self._db.execute("""INSERT INTO specie DEFAULT VALUES""")
             res = self._db.execute("""SELECT MAX(id) FROM specie""")
+            self.id = res[0][0]
+
+
+class Generation:
+    def __init__(self, db, generation_id=None):
+        self._db = db
+        if generation_id:
+            res = self._db.execute(f"""
+            SELECT id
+            FROM generation
+            WHERE id = {generation_id}
+            ORDER BY id DESC
+            LIMIT 1
+            """)
+            if not res:
+                raise ValueError("Specified generation_id doesn't exist")
+            self.id = res[0][0]
+        else:
+            self._db.execute("""INSERT INTO generation DEFAULT VALUES""")
+            res = self._db.execute("""SELECT MAX(id) FROM generation""")
             self.id = res[0][0]
