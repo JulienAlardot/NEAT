@@ -6,13 +6,7 @@ from core.orm import (
     Connection, Generation, Genotype, HistoricalConnection, Individual, Node, NodeTypes,
     Population, Specie,
 )
-
-
-class BaseTestCase(TestCase):
-    def setUp(self):
-        self.maxDiff = 5000
-        self._db = Database('test/test', override=True)
-        self._db.execute("""INSERT INTO model_metadata DEFAULT VALUES""")
+from test import NEATBaseTestCase
 
 
 class TestMetaData(TestCase):
@@ -41,7 +35,7 @@ class TestNodeTypes(TestCase):
         self.assertEqual(3, NodeTypes.output)
 
 
-class TestNode(BaseTestCase):
+class TestNode(NEATBaseTestCase):
     def test_init(self):
         with self.assertRaises(ValueError):
             Node(self._db, node_id=1)
@@ -74,7 +68,7 @@ class TestNode(BaseTestCase):
         self.assertEqual(1, node3.connection_historical)
 
 
-class TestHistoricalConnection(BaseTestCase):
+class TestHistoricalConnection(NEATBaseTestCase):
     def test_init(self):
         with self.assertRaises(ValueError):
             HistoricalConnection(self._db, historical_connection_id=1)
@@ -93,7 +87,7 @@ class TestHistoricalConnection(BaseTestCase):
             HistoricalConnection(self._db, in_node_id=1, out_node_id=1)
 
 
-class TestConnection(BaseTestCase):
+class TestConnection(NEATBaseTestCase):
     def test_init(self):
         self._db.execute("""
         INSERT INTO genotype (id)
@@ -133,7 +127,7 @@ class TestConnection(BaseTestCase):
         self.assertEqual(connection1.historical_id, connection2.historical_id)
 
 
-class TestGenotype(BaseTestCase):
+class TestGenotype(NEATBaseTestCase):
     def test_init(self):
         node_i = Node(self._db, 'input')
         node_i2 = Node(self._db, 'input')
@@ -241,7 +235,8 @@ class TestGenotype(BaseTestCase):
             test_check = test.read()
         self.assertMultiLineEqual(test_check, genome.draw())
 
-class TestIndividual(BaseTestCase):
+
+class TestIndividual(NEATBaseTestCase):
     def test_init(self):
         node1 = Node(self._db, NodeTypes.input)
         node2 = Node(self._db, NodeTypes.output)
@@ -318,7 +313,7 @@ class TestIndividual(BaseTestCase):
         self.assertEqual(2, ind4.population_id)
 
 
-class TestPopulation(BaseTestCase):
+class TestPopulation(NEATBaseTestCase):
     def test_init(self):
         node1 = Node(self._db, NodeTypes.input)
         node2 = Node(self._db, NodeTypes.input)
@@ -396,7 +391,7 @@ class TestPopulation(BaseTestCase):
         self.assertEqual(0, pop2.best_score)
 
 
-class TestSpecie(BaseTestCase):
+class TestSpecie(NEATBaseTestCase):
     def test_init(self):
         with self.assertRaises(ValueError):
             Specie(self._db, 1)
@@ -467,7 +462,7 @@ class TestSpecie(BaseTestCase):
         self.assertEqual(3, Specie(self._db).id)
 
 
-class TestGeneration(BaseTestCase):
+class TestGeneration(NEATBaseTestCase):
     def test_init(self):
         with self.assertRaises(ValueError):
             Generation(self._db, 1)
