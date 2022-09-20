@@ -1,0 +1,34 @@
+digraph {
+    rankdir = "LR"
+    splines = polyline
+    bgcolor = "invis"
+    node [margin = 0 fontcolor = black fontsize = 32 width = 0.5 style = filled fixsized = True labelloc = b fontname = calibri]
+    edge [arrowhead = onormal width = 0.1 tailport = e headclip = True tailclip = True penwidth = 0.5]
+
+    subgraph {
+    rank = same
+    node [shape = square fillcolor = cyan]
+    node_1 [label = "1"]
+    node_2 [label = "2"]
+    }
+    subgraph {
+    node [shape = circle fillcolor = blue]
+    node_3 [label = "3"]
+    node_4 [label = "4"]
+    }
+    subgraph {
+    rank = same
+    node [shape = square fillcolor = red]
+    node_5 [label = "5"]
+    node_6 [label = "6"]
+    }
+
+    node_1 -> node_5 [color = "#000080"]
+    node_1 -> node_6 [color = "#888888"]
+    node_2 -> node_5 [color = "#0000ff"]
+    node_2 -> node_6 [color = "#888888"]
+    node_2 -> node_3 [color = "#ff0000"]
+    node_3 -> node_4 [color = "#800000"]
+    node_4 -> node_5 [color = "#000080"]
+    node_4 -> node_6 [color = "#888888"]
+}

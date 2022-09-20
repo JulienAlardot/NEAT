@@ -1,3 +1,4 @@
+import os.path
 from unittest import TestCase
 
 from core.classutils import (
@@ -9,6 +10,7 @@ from core.database import Database
 
 class BaseTestCase(TestCase):
     def setUp(self):
+        self.maxDiff = 5000
         self._db = Database('test/test', override=True)
         self._db.execute("""INSERT INTO model_metadata DEFAULT VALUES""")
 
@@ -183,6 +185,61 @@ class TestGenotype(BaseTestCase):
         self.assertEqual(1.0, gen ^ genode2)
         self.assertEqual(1 / 3, gen ^ genode3)
 
+    def test_draw(self):
+        node_i1 = Node(self._db, 'input')
+        node_i2 = Node(self._db, 'input')
+        node_h1 = Node(self._db, 'hidden')
+        node_h2 = Node(self._db, 'hidden')
+        node_o1 = Node(self._db, 'output')
+        node_o2 = Node(self._db, 'output')
+        connections_dict = ({
+                                'in_node_id': node_i1.id,
+                                'out_node_id': node_o1.id,
+                                'is_enabled': True,
+                                'weight': 1,
+                            }, {
+                                'in_node_id': node_i1.id,
+                                'out_node_id': node_o2.id,
+                                'is_enabled': True,
+                                'weight': 0,
+                            }, {
+                                'in_node_id': node_i2.id,
+                                'out_node_id': node_o1.id,
+                                'is_enabled': True,
+                                'weight': 10000,
+                            }, {
+                                'in_node_id': node_i2.id,
+                                'out_node_id': node_o2.id,
+                                'is_enabled': False,
+                                'weight': 10000,
+                            }, {
+                                'in_node_id': node_i2.id,
+                                'out_node_id': node_h1.id,
+                                'is_enabled': True,
+                                'weight': -10000,
+                            }, {
+                                'in_node_id': node_h1.id,
+                                'out_node_id': node_h2.id,
+                                'is_enabled': True,
+                                'weight': -1,
+                            }, {
+                                'in_node_id': node_h2.id,
+                                'out_node_id': node_o1.id,
+                                'is_enabled': True,
+                                'weight': 0.5,
+                            }, {
+                                'in_node_id': node_h2.id,
+                                'out_node_id': node_o2.id,
+                                'is_enabled': False,
+                                'weight': -0.5,
+                            },
+        )
+        genome = Genotype(self._db, node_ids={node_i1.id, node_i2.id, node_h1.id, node_h2.id, node_o1.id, node_o2.id},
+                          connections_dict=connections_dict)
+        path = os.path.join(os.path.dirname(__file__), 'test_genome.dot')
+        with open(path, 'rt', encoding='utf-8') as test:
+            test_check = test.read()
+        self.assertMultiLineEqual(test_check, genome.draw())
 
 class TestIndividual(BaseTestCase):
     def test_init(self):

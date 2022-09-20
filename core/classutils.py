@@ -1,3 +1,5 @@
+import os.path
+
 from core.database import Database
 
 _db = Database(f'{__file__}/../../data/template', override=True)
@@ -272,6 +274,107 @@ class Genotype:
         diff_connections = len(other.historical_connection_ids ^ self.historical_connection_ids)
         total_connections = max(len(other.historical_connection_ids), len(self.historical_connection_ids))
         return (total_nodes + total_connections - diff_nodes - diff_connections) / (total_nodes + total_connections)
+
+    def draw(self, save_path=None):
+
+        # graph header declaration
+        graph_lines = [
+            'digraph {', '    rankdir = "LR"', '    splines = polyline', '    bgcolor = "invis"',
+            '    node [margin = 0 fontcolor = black fontsize = 32 width = 0.5 style = filled fixsized = True '
+            'labelloc = b fontname = calibri]',
+            '    edge [arrowhead = onormal width = 0.1 tailport = e headclip = True tailclip = True penwidth = 0.5]',
+            '',
+        ]
+
+        # Assemble necessary node data
+        node_mapping = {
+            NodeTypes.input: {},
+            NodeTypes.hidden: {},
+            NodeTypes.output: {},
+        }
+        for node_id in sorted(self.node_ids):
+            node_mapping[Node(self._db, node_id=node_id).node_type][node_id] = f"node_{node_id}"
+
+        # Add nodes declaration lines
+        graph_lines += [
+            '    subgraph {',
+            '    rank = same',
+            '    node [shape = square fillcolor = cyan]',
+        ]
+        for node_id, name in node_mapping[NodeTypes.input].items():
+            graph_lines.append(
+                    f'    {name} [label = "{node_id}"]')
+        graph_lines += [
+            '    }',
+            '    subgraph {',
+            '    node [shape = circle fillcolor = blue]',
+        ]
+        for node_id, name in node_mapping[NodeTypes.hidden].items():
+            graph_lines.append(
+                    f'    {name} [label = "{node_id}"]')
+
+        graph_lines += [
+            '    }',
+            '    subgraph {',
+            '    rank = same',
+            '    node [shape = square fillcolor = red]',
+        ]
+        for node_id, name in node_mapping[NodeTypes.output].items():
+            graph_lines.append(
+                    f'    {name} [label = "{node_id}"]')
+
+        graph_lines.append('    }')
+        # Assemble necessary connection data
+        connection_mapping = {
+            NodeTypes.input: [],
+            NodeTypes.hidden: [],
+            NodeTypes.output: [],
+        }
+        for conn_id in sorted(self.connection_ids):
+            conn = Connection(self._db, connection_id=conn_id)
+            in_node_id = conn.in_node
+            out_node_id = conn.out_node
+            weight = conn.weight
+            weight *= 1 if conn.is_enabled else 0
+            if weight != 0.:
+                is_pos = weight > 0
+                intensity = round(min(255, max(0, ((round(abs(weight) - 1) * 2) ** (1 / 2.1)) * 32) + 128))
+                ramp = '0123456789abcdef'
+                intensity = ramp[intensity // 16] + ramp[intensity % 16]
+                color = f"#{'00' if is_pos else intensity}00{intensity if is_pos else '00'}"
+            else:
+                color = '#888888'
+            in_node = Node(self._db, node_id=in_node_id)
+            out_node = Node(self._db, node_id=out_node_id)
+            if in_node.node_type == NodeTypes.input:
+                node_type = NodeTypes.input
+            elif out_node.node_type == NodeTypes.output:
+                node_type = NodeTypes.output
+            else:
+                node_type = NodeTypes.hidden
+            connection_mapping[node_type].append(
+                    f'    node_{in_node_id} -> node_{out_node_id} [color = "{color}"]')
+        # Add separator
+        graph_lines.append('')
+
+        # Add connection declaration lines
+        graph_lines += connection_mapping[NodeTypes.input]
+        graph_lines += connection_mapping[NodeTypes.hidden]
+        graph_lines += connection_mapping[NodeTypes.output]
+
+        "Close graph"
+        graph_lines.append("}")
+        graph = "\n".join(graph_lines)
+        if save_path:
+            if os.path.isdir(save_path):
+                save_path = os.path.join(save_path, f"genotype_{self.id}")
+
+            if not save_path.lower().endswith('.dot'):
+                save_path += '.dot'
+
+            with open(save_path, 'wt', encoding='utf-8') as save:
+                save.write(graph)
+        return graph
 
 
 class Individual:
