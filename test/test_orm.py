@@ -1,11 +1,11 @@
 import os.path
 from unittest import TestCase
 
-from core.classutils import (
+from core.database import Database
+from core.orm import (
     Connection, Generation, Genotype, HistoricalConnection, Individual, Node, NodeTypes,
     Population, Specie,
 )
-from core.database import Database
 
 
 class BaseTestCase(TestCase):
