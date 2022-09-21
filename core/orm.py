@@ -1,4 +1,5 @@
 import os.path
+import random
 
 from core.database import Database
 
@@ -465,6 +466,70 @@ class Individual:
             self._score = score
             self.specie_id = specie_id
             self.genotype_id = genotype_id
+
+    def __add__(self, other):
+        if not isinstance(other, Individual):
+            raise TypeError(
+                    "Cannot use and operator between an instance of 'Individual' and an instance of another class"
+            )
+        if self._db != other._db:
+            raise SystemError("Cannot mix databases when reproducing Individuals")
+        db = self._db
+        population_id = max(self.population_id, other.population_id)
+        specie_id = None if self.specie_id != other.specie_id else self.specie_id
+        node_ids = set()
+        connections_dict = []
+
+        self_genotype = Genotype(db, self.genotype_id)
+        other_genotype = Genotype(db, other.genotype_id)
+
+        inner_hist_conn_ids = self_genotype.historical_connection_ids & other_genotype.historical_connection_ids
+        outer_hist_conn_ids = self_genotype.historical_connection_ids | other_genotype.historical_connection_ids
+        hist_conn_ids = set(inner_hist_conn_ids)
+
+        for conn_id in (outer_hist_conn_ids - inner_hist_conn_ids):
+            if bool(round(random.random())):
+                hist_conn_ids.add(conn_id)
+
+        connections_data = self._db.execute(f"""
+        SELECT ch.id, ch.in_node_id, ch.out_node_id, conn_1.weight, conn_1.is_enabled, conn_2.weight, conn_2.is_enabled
+            FROM connection_historical AS ch 
+            LEFT JOIN connection AS conn_1 ON ch.id = conn_1.historical_id
+            LEFT OUTER JOIN connection AS conn_2 ON ch.id = conn_2.historical_id
+            WHERE ( ch.id IN {tuple(hist_conn_ids)} 
+                AND conn_1.genotype_id = {self_genotype.id}
+                AND conn_2.genotype_id = {other_genotype.id}
+                )
+        """)
+
+        for row in connections_data:
+            hist_conn_id, in_node_id, out_node_id, self_weight, self_enabled, other_weight, other_enabled = row
+            node_ids |= {in_node_id, out_node_id}
+            if bool(round(random.random())):
+                weight = self_weight
+                is_enabled = self_enabled
+            else:
+                weight = other_weight
+                other_enabled = self_enabled
+
+            connections_dict.append({
+                'historical_connection_id': hist_conn_id,
+                'weight': weight,
+                'is_enabled': is_enabled,
+            })
+
+        return {
+            "db": db,
+            "individual_id": None,
+            "population_id": population_id,
+            "genotype_id": None,
+            "genotype_kwargs": {
+                'node_ids': node_ids,
+                'connections_dict': tuple(connections_dict)
+            },
+            "specie_id": specie_id,
+            "score": None,
+        }
 
     @property
     def speciation_treshold(self):

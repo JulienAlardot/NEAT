@@ -1,5 +1,5 @@
 import os.path
-from unittest import TestCase
+from unittest import TestCase, mock
 
 from core.database import Database
 from core.orm import (
@@ -311,6 +311,50 @@ class TestIndividual(NEATBaseTestCase):
         self.assertEqual(3, ind4.specie_id)
         self.assertEqual(4, ind4.genotype_id)
         self.assertEqual(2, ind4.population_id)
+
+    @mock.patch('random.random', lambda: 1)
+    def test_add(self):
+        node1 = Node(self._db, NodeTypes.input)
+        node2 = Node(self._db, NodeTypes.output)
+        node3 = Node(self._db, NodeTypes.output)
+        self._db.execute("""INSERT INTO generation DEFAULT VALUES""")
+        self._db.execute("""INSERT INTO population (id, generation_id) VALUES (1,1)""")
+        genotype_kwargs = {
+            "node_ids": {node1.id, node2.id, node3.id},
+            "connections_dict": ({
+                                     'in_node_id': 1,
+                                     'out_node_id': 2,
+                                     'is_enabled': False,
+                                     'weight': 0.5,
+                                 }, {
+                                     'in_node_id': 1,
+                                     'out_node_id': 3,
+                                     'is_enabled': True,
+                                     'weight': 1,
+                                 },)
+        }
+        ind1 = Individual(self._db, genotype_kwargs=genotype_kwargs, population_id=1)
+        genotype_kwargs_2 = {
+            "node_ids": {node1.id, node2.id},
+            "connections_dict": ({
+                                     'in_node_id': 1,
+                                     'out_node_id': 2,
+                                     'is_enabled': True,
+                                     'weight': 1,
+                                 },)
+        }
+        ind2 = Individual(self._db, genotype_kwargs=genotype_kwargs_2, population_id=1)
+        ind3 = Individual(**(ind1 + ind2))
+        self.assertNotEqual(ind2.id, ind3.id)
+        self.assertNotEqual(ind2.genotype_id, ind3.genotype_id)
+        self.assertEqual(ind2.population_id, ind3.population_id)
+        self.assertEqual(ind2.specie_id, ind3.specie_id)
+        geno2 = Genotype(self._db, ind2.genotype_id)
+        geno3 = Genotype(self._db, ind3.genotype_id)
+        self.assertSetEqual(geno2.historical_connection_ids, geno3.historical_connection_ids)
+        self.assertSetEqual(set(), geno2.connection_ids & geno3.connection_ids)
+        self.assertSetEqual(geno2.node_ids, geno3.node_ids)
+        self.assertEqual(1, geno3 ^ geno2)
 
 
 class TestPopulation(NEATBaseTestCase):
