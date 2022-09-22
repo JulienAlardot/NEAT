@@ -129,13 +129,13 @@ class TestConnection(NEATBaseTestCase):
 
 class TestGenotype(NEATBaseTestCase):
     def test_init(self):
-        node_i = Node(self._db, 'input')
-        node_i2 = Node(self._db, 'input')
-        node_i3 = Node(self._db, 'input')
-        node_o = Node(self._db, 'output')
-        node_o2 = Node(self._db, 'output')
-        node_o3 = Node(self._db, 'output')
-        node_o4 = Node(self._db, 'output')
+        _ = Node(self._db, 'input')
+        _ = Node(self._db, 'input')
+        _ = Node(self._db, 'input')
+        _ = Node(self._db, 'output')
+        _ = Node(self._db, 'output')
+        _ = Node(self._db, 'output')
+        _ = Node(self._db, 'output')
         with self.assertRaises(ValueError):
             Genotype(self._db, genotype_id=1)
         with self.assertRaises(ValueError):
