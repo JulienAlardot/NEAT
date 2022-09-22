@@ -3,7 +3,7 @@ from unittest import TestCase, mock
 
 from core.database import Database
 from core.orm import (
-    Connection, Generation, Genotype, HistoricalConnection, Individual, Node, NodeTypes,
+    Connection, Generation, Genotype, HistoricalConnection, Individual, MutationTypes, Node, NodeTypes,
     Population, Specie,
 )
 from test import NEATBaseTestCase
@@ -33,6 +33,13 @@ class TestNodeTypes(TestCase):
         self.assertEqual(1, NodeTypes.input)
         self.assertEqual(2, NodeTypes.hidden)
         self.assertEqual(3, NodeTypes.output)
+
+
+class TestMutationTypes(TestCase):
+    def test_attributes(self):
+        self.assertEqual(1, MutationTypes.weight_change)
+        self.assertEqual(2, MutationTypes.switch_enabled)
+        self.assertEqual(3, MutationTypes.split_connection)
 
 
 class TestNode(NEATBaseTestCase):

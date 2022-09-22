@@ -50,6 +50,16 @@ class Database:
             VALUES  ('Input'),
                     ('Hidden'),
                     ('Output');
+                    
+        CREATE TABLE mutation_type (
+            id INTEGER PRIMARY KEY,
+            name VARCHAR(8) NOT NULL UNIQUE
+            );
+            
+        INSERT INTO mutation_type (name)
+            VALUES  ('Weight'),
+                    ('Enabling'),
+                    ('Split');
         
         CREATE TABLE node (
             id INTEGER PRIMARY KEY,

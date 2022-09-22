@@ -5,11 +5,18 @@ from core.database import Database
 
 _db = Database(f'{__file__}/../../data/template', override=True)
 
-_matching = {key: value for value, key in _db.execute("""SELECT id, name FROM node_type ORDER BY name""")}
+_matching_node_types = {key: value for value, key in _db.execute("""SELECT id, name FROM node_type ORDER BY id""")}
+_matching_mutation_types = {
+    key: value for value, key in _db.execute("""SELECT id, name FROM mutation_type ORDER BY id""")
+}
 
 
 class NodeTypes:
-    hidden, input, output = _matching.values()
+    input, hidden, output = _matching_node_types.values()
+
+
+class MutationTypes:
+    weight_change, switch_enabled, split_connection, = _matching_mutation_types.values()
 
 
 class Node:
