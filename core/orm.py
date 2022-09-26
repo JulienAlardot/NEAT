@@ -384,6 +384,10 @@ class Genotype:
                 save.write(graph)
         return graph
 
+    def add_node(self, node_id):
+        self._db.execute(f"""INSERT INTO genotype_node_rel (genotype_id, node_id) VALUES ({self.id}, {node_id})""")
+        self.node_ids.add(node_id)
+
 
 class Individual:
     def __init__(self, db, individual_id=None, population_id=None, genotype_id=None, genotype_kwargs=None,

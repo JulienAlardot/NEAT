@@ -143,6 +143,7 @@ class TestGenotype(NEATBaseTestCase):
         _ = Node(self._db, 'output')
         _ = Node(self._db, 'output')
         _ = Node(self._db, 'output')
+        new_node_id = Node(self._db, 'hidden').id
         with self.assertRaises(ValueError):
             Genotype(self._db, genotype_id=1)
         with self.assertRaises(ValueError):
@@ -185,6 +186,11 @@ class TestGenotype(NEATBaseTestCase):
             gen ^ {6, }
         self.assertEqual(1.0, gen ^ genode2)
         self.assertEqual(1 / 3, gen ^ genode3)
+        self.assertNotIn(new_node_id, gen.node_ids)
+        gen.add_node(new_node_id)
+        gen_2 = Genotype(self._db, genotype_id=gen.id)
+        self.assertIn(new_node_id, gen.node_ids)
+        self.assertIn(new_node_id, gen_2.node_ids)
 
     def test_draw(self):
         node_i1 = Node(self._db, 'input')
