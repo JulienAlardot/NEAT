@@ -2,10 +2,10 @@ from unittest import mock
 
 from core.model import NEATModel
 from core.orm import NodeTypes
-from test import NEATBaseTestCase
+from test import NEATBaseTestCaseMemory
 
 
-class TestNeatModel(NEATBaseTestCase):
+class TestNeatModel(NEATBaseTestCaseMemory):
     @mock.patch('random.random', new=lambda: 1)
     def test_init(self):
         model = NEATModel(self._db)

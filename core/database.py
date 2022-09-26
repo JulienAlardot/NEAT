@@ -4,8 +4,8 @@ import sqlite3 as sql
 
 class Database:
     def __init__(self, name, override=False):
-        name = name + ".sqlite" if not name.endswith('.sqlite') else name
-        name = os.path.abspath(name)
+        name = name + ".sqlite" if (not name.endswith('.sqlite') and name != ':memory:') else name
+        name = os.path.abspath(name) if name != ':memory:' else name
         if name in os.listdir(os.path.dirname(__file__)) and not override:
             raise FileExistsError('A database with this name already exists')
 
