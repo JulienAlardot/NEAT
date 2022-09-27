@@ -67,11 +67,11 @@ class TestNode(NEATBaseTestCase):
         node1 = Node(self._db, node_type=NodeTypes.input)
         node2 = Node(self._db, node_type=NodeTypes.output)
         hc = HistoricalConnection(self._db, in_node_id=node1.id, out_node_id=node2.id)
-        hconnection2 = HistoricalConnection(self._db, historical_connection_id=hc.id)
+        hc2 = HistoricalConnection(self._db, historical_connection_id=hc.id)
         node3 = Node(self._db, connection_historical_id=hc.id)
-        self.assertEqual(hc.id, hconnection2.id)
-        self.assertEqual(hc.in_node, hconnection2.in_node)
-        self.assertEqual(hc.out_node, hconnection2.out_node)
+        self.assertEqual(hc.id, hc2.id)
+        self.assertEqual(hc.in_node, hc2.in_node)
+        self.assertEqual(hc.out_node, hc2.out_node)
         self.assertEqual(1, node3.connection_historical)
 
 
