@@ -388,6 +388,20 @@ class Genotype:
         self._db.execute(f"""INSERT INTO genotype_node_rel (genotype_id, node_id) VALUES ({self.id}, {node_id})""")
         self.node_ids.add(node_id)
 
+    def duplicate(self):
+        connections_data = self._db.execute(f"""
+        SELECT historical_id, is_enabled, weight 
+        FROM connection
+        WHERE genotype_id = {self.id}
+        """)
+
+        duplicate = Genotype(self._db, node_ids=self.node_ids, connections_dict=({
+            'historical_connection_id': data[0],
+            'is_enabled': data[1],
+            'weight': data[2],
+        } for data in connections_data))
+        return duplicate
+
 
 class Individual:
     def __init__(self, db, individual_id=None, population_id=None, genotype_id=None, genotype_kwargs=None,
