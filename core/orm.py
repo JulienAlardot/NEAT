@@ -458,7 +458,7 @@ class Individual:
                 """)
                 if res:
                     best_specie_id = None
-                    best_result = min(1., max(0., 1. - self.speciation_treshold))
+                    best_result = min(1., max(0., 1. - self.speciation_threshold))
                     for other_id, other_specie_id in res:
                         other_genotype = Genotype(self._db, genotype_id=other_id)
                         genotypes_similarity = genotype ^ other_genotype
@@ -557,7 +557,7 @@ class Individual:
         }
 
     @property
-    def speciation_treshold(self):
+    def speciation_threshold(self):
         res = self._db.execute("""
         SELECT speciation_tresh
         FROM model_metadata
