@@ -327,8 +327,10 @@ class Genotype:
         }
 
     def get_mutated(self):
-        split_rate, weight_rate, weight_std, switch_rate = self._db.execute("""
-            SELECT mutation_split_rate, mutation_weight_rate, mutation_weight_std, mutation_switch_rate 
+        split_rate, weight_rate, add_rate, switch_rate, weight_std = self._db.execute("""
+            SELECT (
+            mutation_split_rate, mutation_weight_rate, mutation_add_rate, mutation_switch_rate, mutation_weight_std
+            )
             FROM model_metadata
             ORDER BY id DESC
             LIMIT 1
@@ -343,8 +345,11 @@ class Genotype:
             """))))
         mutant['node_ids'].add(bias_node_id)
         new_connections = list(mutant.get('connection_dicts', []))
+        add_connection_count = 0
+        in_out_node_mapping = {}
         for connection in mutant.get('connection_dicts', []):
             historical_id = connection['historical_connection_id']
+            in_out_node_mapping.setdefault(connection['in_node_id'], []).append(connection['out_node_id'])
             del connection['historical_connection_id']
             r = random.random()
             m_rate = weight_rate
@@ -354,6 +359,10 @@ class Genotype:
             m_rate += switch_rate
             if r < m_rate:
                 connection['is_enabled'] = not connection.get('is_enabled', True)
+                continue
+            m_rate += add_rate
+            if r < m_rate:
+                add_connection_count += 1
                 continue
             m_rate += split_rate
             if r < m_rate:
@@ -379,7 +388,43 @@ class Genotype:
                                             'is_enabled': connection.is_enabled,
                                         },
                 ))
-
+        query = """
+            SELECT node.id
+            FROM genotype_node_rel
+            INNER JOIN node ON genotype_node_rel.node_id = node.id
+            INNER JOIN node_type AS nt ON node.node_type_id = nt.id
+            WHERE genotype_node_rel.genotype_id = {}
+                AND node_type.name = {}
+                AND node.id IN ({})
+        """
+        input_nodes = set((
+            row[0] for row in self._db.execute(
+                query.format(mutant['genotype_id'], 'Input', ', '.join(mutant['node_ids']))
+        )))
+        hidden_nodes = set((
+            row[0] for row in self._db.execute(
+                query.format(mutant['genotype_id'], 'Hidden', ', '.join(mutant['node_ids']))
+        )))
+        output_nodes = set((
+            row[0] for row in self._db.execute(
+                query.format(mutant['genotype_id'], 'Output', ', '.join(mutant['node_ids']))
+        )))
+        escape = False
+        for input_node in input_nodes | hidden_nodes:
+            for output_node in (hidden_nodes if input_node not in hidden_nodes else {}) | output_nodes:
+                if output_node not in in_out_node_mapping.get(input_node, []):
+                    new_connections.append({
+                        'in_node_id': input_node,
+                        'out_node_id': output_node,
+                        'weight': (random.random() * 2) - 1,
+                        'is_enabled': True,
+                    })
+                    add_connection_count -= 1
+                    escape = add_connection_count > 0
+                    break
+            if escape:
+                break
+        mutant['connection_dicts'] = tuple(new_connections)
         del mutant['genotype_id']
         return mutant
 
