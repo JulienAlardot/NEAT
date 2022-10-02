@@ -21,7 +21,7 @@ class TestMetaData(TestCase):
             ind_dicts = ({
                              'genotype_kwargs': {
                                  "node_ids": {1, 2},
-                                 "connections_dict": (
+                                 "connection_dicts": (
                                      {'in_node_id': 1, 'out_node_id': 2, },)
                              }
                          },)
@@ -152,16 +152,16 @@ class TestGenotype(NEATBaseTestCase):
             Genotype(self._db)
         with self.assertRaises(ValueError):
             Genotype(self._db, node_ids={1, 2, })
-        connections_dict = ({
+        connection_dicts = ({
                                 'in_node_id': 1,
                                 'out_node_id': 2,
                                 'is_enabled': False,
                                 'weight': 0.5,
                             },)
         with self.assertRaises(ValueError):
-            Genotype(self._db, connections_dict=connections_dict)
+            Genotype(self._db, connection_dicts=connection_dicts)
 
-        gen = Genotype(self._db, node_ids={1, 2, }, connections_dict=connections_dict)
+        gen = Genotype(self._db, node_ids={1, 2, }, connection_dicts=connection_dicts)
         self.assertEqual(1, HistoricalConnection(self._db, 1).id)
         self.assertEqual(1, Connection(self._db, historical_connection_id=1, genotype_id=gen.id).id)
         self.assertFalse(Connection(self._db, connection_id=1, genotype_id=gen.id).is_enabled)
@@ -171,19 +171,19 @@ class TestGenotype(NEATBaseTestCase):
         self.assertEqual(1, gen.id)
         self.assertSetEqual({1, }, gen.connection_ids)
         self.assertSetEqual({1, 2, }, gen.node_ids)
-        genode2 = Genotype(self._db, node_ids={1, 2, }, connections_dict=connections_dict)
-        connections_dict2 = ({
-                                 'in_node_id': 1,
-                                 'out_node_id': 2,
-                                 'is_enabled': False,
-                                 'weight': 0.5,
-                             }, {
-                                 'in_node_id': 3,
-                                 'out_node_id': 7,
-                                 'is_enabled': True,
-                                 'weight': 1,
-                             },)
-        genode3 = Genotype(self._db, node_ids={1, 2, 3, 4, 5, 6, 7}, connections_dict=connections_dict2)
+        genode2 = Genotype(self._db, node_ids={1, 2, }, connection_dicts=connection_dicts)
+        connection_dicts_2 = ({
+                                  'in_node_id': 1,
+                                  'out_node_id': 2,
+                                  'is_enabled': False,
+                                  'weight': 0.5,
+                              }, {
+                                  'in_node_id': 3,
+                                  'out_node_id': 7,
+                                  'is_enabled': True,
+                                  'weight': 1,
+                              },)
+        genode3 = Genotype(self._db, node_ids={1, 2, 3, 4, 5, 6, 7}, connection_dicts=connection_dicts_2)
         with self.assertRaises(TypeError):
             gen ^ {6, }
         self.assertEqual(1.0, gen ^ genode2)
@@ -204,7 +204,7 @@ class TestGenotype(NEATBaseTestCase):
         node_h2 = Node(self._db, 'hidden')
         node_o1 = Node(self._db, 'output')
         node_o2 = Node(self._db, 'output')
-        connections_dict = ({
+        connection_dicts = ({
                                 'in_node_id': node_i1.id,
                                 'out_node_id': node_o1.id,
                                 'is_enabled': True,
@@ -248,7 +248,7 @@ class TestGenotype(NEATBaseTestCase):
         )
         genome = Genotype(self._db, node_ids={
             node_b.id, node_i1.id, node_i2.id, node_h1.id, node_h2.id, node_o1.id, node_o2.id
-        }, connections_dict=connections_dict)
+        }, connection_dicts=connection_dicts)
         path = os.path.join(os.path.dirname(__file__), 'test_genome.dot')
         with open(path, 'rt', encoding='utf-8') as test:
             test_check = test.read()
@@ -262,7 +262,7 @@ class TestIndividual(NEATBaseTestCase):
         node3 = Node(self._db, NodeTypes.output)
         genotype_kwargs = {
             "node_ids": {node1.id, node2.id, node3.id},
-            "connections_dict": ({
+            "connection_dicts": ({
                                      'in_node_id': 1,
                                      'out_node_id': 2,
                                      'is_enabled': False,
@@ -299,7 +299,7 @@ class TestIndividual(NEATBaseTestCase):
         self.assertEqual(1, ind2.population_id)
         genotype_kwargs_2 = {
             "node_ids": {1, 2},
-            "connections_dict": (
+            "connection_dicts": (
                 {
                     'in_node_id': 1,
                     'out_node_id': 2,
@@ -316,7 +316,7 @@ class TestIndividual(NEATBaseTestCase):
         self.assertEqual(1, ind3.population_id)
         ind4 = Individual(self._db, population_id=2, genotype_kwargs={
             "node_ids": {1, 2},
-            "connections_dict": (
+            "connection_dicts": (
                 {
                     'in_node_id': 1,
                     'out_node_id': 2,
@@ -340,7 +340,7 @@ class TestIndividual(NEATBaseTestCase):
         self._db.execute("""INSERT INTO population (id, generation_id) VALUES (1,1)""")
         genotype_kwargs = {
             "node_ids": {node1.id, node2.id, node3.id},
-            "connections_dict": ({
+            "connection_dicts": ({
                                      'in_node_id': node1.id,
                                      'out_node_id': node2.id,
                                      'is_enabled': False,
@@ -355,7 +355,7 @@ class TestIndividual(NEATBaseTestCase):
         ind1 = Individual(self._db, genotype_kwargs=genotype_kwargs, population_id=1)
         genotype_kwargs_2 = {
             "node_ids": {node1.id, node2.id},
-            "connections_dict": ({
+            "connection_dicts": ({
                                      'in_node_id': node1.id,
                                      'out_node_id': node2.id,
                                      'is_enabled': True,
@@ -393,7 +393,7 @@ class TestPopulation(NEATBaseTestCase):
             {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connections_dict": ({
+                    "connection_dicts": ({
                                              'in_node_id': 1,
                                              'out_node_id': 2,
                                              'is_enabled': False,
@@ -408,7 +408,7 @@ class TestPopulation(NEATBaseTestCase):
             }, {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connections_dict": ({
+                    "connection_dicts": ({
                                              'in_node_id': 1,
                                              'out_node_id': 2,
                                              'is_enabled': False,
@@ -424,7 +424,7 @@ class TestPopulation(NEATBaseTestCase):
                 'genotype_kwargs':
                     {
                         "node_ids": {1, 2},
-                        "connections_dict": (
+                        "connection_dicts": (
                             {
                                 'in_node_id': 1,
                                 'out_node_id': 2,
@@ -468,7 +468,7 @@ class TestSpecie(NEATBaseTestCase):
             {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connections_dict": ({
+                    "connection_dicts": ({
                                              'in_node_id': 1,
                                              'out_node_id': 2,
                                              'is_enabled': False,
@@ -483,7 +483,7 @@ class TestSpecie(NEATBaseTestCase):
             }, {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connections_dict": ({
+                    "connection_dicts": ({
                                              'in_node_id': 1,
                                              'out_node_id': 2,
                                              'is_enabled': False,
@@ -499,7 +499,7 @@ class TestSpecie(NEATBaseTestCase):
                 'genotype_kwargs':
                     {
                         "node_ids": {1, 2},
-                        "connections_dict": (
+                        "connection_dicts": (
                             {
                                 'in_node_id': 1,
                                 'out_node_id': 2,
@@ -539,7 +539,7 @@ class TestGeneration(NEATBaseTestCase):
             {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connections_dict": ({
+                    "connection_dicts": ({
                                              'in_node_id': 1,
                                              'out_node_id': 2,
                                              'is_enabled': False,
@@ -554,7 +554,7 @@ class TestGeneration(NEATBaseTestCase):
             }, {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connections_dict": ({
+                    "connection_dicts": ({
                                              'in_node_id': 1,
                                              'out_node_id': 2,
                                              'is_enabled': False,
@@ -570,7 +570,7 @@ class TestGeneration(NEATBaseTestCase):
                 'genotype_kwargs':
                     {
                         "node_ids": {1, 2},
-                        "connections_dict": (
+                        "connection_dicts": (
                             {
                                 'in_node_id': 1,
                                 'out_node_id': 2,

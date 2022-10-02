@@ -216,11 +216,11 @@ class Connection(HistoricalConnection):
 
 
 class Genotype:
-    def __init__(self, db, genotype_id=None, node_ids=None, connections_dict=None, parent_genotype_ids=None):
+    def __init__(self, db, genotype_id=None, node_ids=None, connection_dicts=None, parent_genotype_ids=None):
         self._db = db
         parent_genotype_ids = [] if parent_genotype_ids is None else parent_genotype_ids
-        if not (genotype_id or (node_ids and connections_dict)):
-            raise ValueError("Must specify either an existing genotype_id or both node_ids and connections_dict")
+        if not (genotype_id or (node_ids and connection_dicts)):
+            raise ValueError("Must specify either an existing genotype_id or both node_ids and connection_dicts")
 
         if genotype_id:
             res = self._db.execute(f"""
@@ -277,7 +277,7 @@ class Genotype:
             """)
             self.node_ids = set((row[0] for row in res))
             self.connection_ids = set()
-            for connection in connections_dict:
+            for connection in connection_dicts:
                 connection.update({'genotype_id': self.id})
                 self.connection_ids.add(Connection(self._db, **connection).id)
 
@@ -527,7 +527,7 @@ class Individual:
         population_id = max(self.population_id, other.population_id)
         specie_id = None if self.specie_id != other.specie_id else self.specie_id
         node_ids = set()
-        connections_dict = []
+        connection_dicts = []
 
         self_genotype = Genotype(db, self.genotype_id)
         other_genotype = Genotype(db, other.genotype_id)
@@ -561,7 +561,7 @@ class Individual:
                 weight = other_weight
                 is_enabled = other_enabled
 
-            connections_dict.append({
+            connection_dicts.append({
                 'historical_connection_id': hist_conn_id,
                 'weight': weight,
                 'is_enabled': is_enabled,
@@ -574,7 +574,7 @@ class Individual:
             "genotype_id": None,
             "genotype_kwargs": {
                 'node_ids': node_ids,
-                'connections_dict': tuple(connections_dict),
+                'connection_dicts': tuple(connection_dicts),
                 "parent_genotype_ids": {self_genotype.id, other_genotype.id},
             },
             "specie_id": specie_id,

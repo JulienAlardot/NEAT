@@ -31,7 +31,7 @@ class NEATModel:
         connections = ({"in_node_id": bias_node_id, "out_node_id": out_id, "weight": ((random.random() * 2) - 1)}
                        for out_id in self._output_node_ids)
         connections = tuple(connections)
-        individual_dict = {'genotype_kwargs': {"node_ids": node_ids, "connections_dict": connections}}
+        individual_dict = {'genotype_kwargs': {"node_ids": node_ids, "connection_dicts": connections}}
         individual_dicts = (individual_dict for i in range(pop_size))
 
         self._population = self.get_population(generation_id=self._generation.id, individual_dicts=tuple(
@@ -56,8 +56,8 @@ class NEATModel:
     def get_generation(self, generation_id=None):
         return Generation(self._db, generation_id)
 
-    def get_genotype(self, genotype_id=None, node_ids=None, connections_dict=None):
-        return Genotype(self._db, genotype_id, node_ids, connections_dict)
+    def get_genotype(self, genotype_id=None, node_ids=None, connection_dicts=None):
+        return Genotype(self._db, genotype_id, node_ids, connection_dicts)
 
     def get_hist_connection(self, historical_connection_id=None, in_node_id=None, out_node_id=None):
         return HistoricalConnection(self._db, historical_connection_id, in_node_id, out_node_id)
