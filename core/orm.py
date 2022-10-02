@@ -1,6 +1,7 @@
 import os.path
 import random
 
+from core.activation import sigmoid
 from core.database import Database
 
 _db = Database(f'{__file__}/../../data/template', override=True)
@@ -20,8 +21,10 @@ class MutationTypes:
 
 
 class Node:
-    def __init__(self, db, node_type=None, connection_historical_id=None, node_id=None):
+    def __init__(self, db, node_type=None, connection_historical_id=None, node_id=None, activation_func=sigmoid):
         self._db = db
+        self.input_sum = 0
+        self._activation_func = activation_func
 
         if isinstance(node_type, str):
             node_type = getattr(NodeTypes, node_type.lower())
@@ -70,6 +73,10 @@ class Node:
                 self.id = res[0][0]
                 self.node_type = node_type
                 self.connection_historical = connection_historical_id
+
+    @property
+    def output(self):
+        return self._activation_func(self.input_sum)
 
 
 class HistoricalConnection:
