@@ -47,7 +47,8 @@ class Database:
             );
             
         INSERT INTO node_type (name)
-            VALUES  ('Input'),
+            VALUES  ('Bias'),
+                    ('Input'),
                     ('Hidden'),
                     ('Output');
                     
@@ -70,6 +71,8 @@ class Database:
                 ON DELETE RESTRICT
                 ON UPDATE RESTRICT
             );
+        INSERT INTO node (node_type_id)     
+            VALUES (1);
             
         CREATE TABLE connection_historical (
                 id INTEGER PRIMARY KEY,

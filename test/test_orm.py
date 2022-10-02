@@ -30,9 +30,10 @@ class TestMetaData(TestCase):
 
 class TestNodeTypes(TestCase):
     def test_attributes(self):
-        self.assertEqual(1, NodeTypes.input)
-        self.assertEqual(2, NodeTypes.hidden)
-        self.assertEqual(3, NodeTypes.output)
+        self.assertEqual(1, NodeTypes.bias)
+        self.assertEqual(2, NodeTypes.input)
+        self.assertEqual(3, NodeTypes.hidden)
+        self.assertEqual(4, NodeTypes.output)
 
 
 class TestMutationTypes(TestCase):
@@ -45,7 +46,7 @@ class TestMutationTypes(TestCase):
 class TestNode(NEATBaseTestCase):
     def test_init(self):
         with self.assertRaises(ValueError):
-            Node(self._db, node_id=1)
+            Node(self._db, node_id=2)
         with self.assertRaises(ValueError):
             Node(self._db)
         Node(self._db, node_type=NodeTypes.input)
@@ -54,14 +55,15 @@ class TestNode(NEATBaseTestCase):
         with self.assertRaises(ValueError):
             Node(self._db, connection_historical_id=1)
         self.assertEqual(1, Node(self._db, node_id=1).node_type)
-        self.assertEqual(3, Node(self._db, node_id=2).node_type)
+        self.assertEqual(2, Node(self._db, node_id=2).node_type)
+        self.assertEqual(4, Node(self._db, node_id=3).node_type)
         self.assertEqual(None, Node(self._db, node_id=1).connection_historical)
 
         with self.assertRaises(ValueError):
             Node(self._db, connection_historical_id=1)
 
         with self.assertRaises(ValueError):
-            Node(self._db, node_id=4)
+            Node(self._db, node_id=5)
 
     def test_historical_connection_rel(self):
         node1 = Node(self._db, node_type=NodeTypes.input)
@@ -195,6 +197,7 @@ class TestGenotype(NEATBaseTestCase):
         self.assertIn(new_node_id, gen_2.node_ids)
 
     def test_draw(self):
+        node_b = Node(self._db, 'bias')
         node_i1 = Node(self._db, 'input')
         node_i2 = Node(self._db, 'input')
         node_h1 = Node(self._db, 'hidden')
@@ -243,8 +246,9 @@ class TestGenotype(NEATBaseTestCase):
                                 'weight': -0.5,
                             },
         )
-        genome = Genotype(self._db, node_ids={node_i1.id, node_i2.id, node_h1.id, node_h2.id, node_o1.id, node_o2.id},
-                          connections_dict=connections_dict)
+        genome = Genotype(self._db, node_ids={
+            node_b.id, node_i1.id, node_i2.id, node_h1.id, node_h2.id, node_o1.id, node_o2.id
+        }, connections_dict=connections_dict)
         path = os.path.join(os.path.dirname(__file__), 'test_genome.dot')
         with open(path, 'rt', encoding='utf-8') as test:
             test_check = test.read()
@@ -337,13 +341,13 @@ class TestIndividual(NEATBaseTestCase):
         genotype_kwargs = {
             "node_ids": {node1.id, node2.id, node3.id},
             "connections_dict": ({
-                                     'in_node_id': 1,
-                                     'out_node_id': 2,
+                                     'in_node_id': node1.id,
+                                     'out_node_id': node2.id,
                                      'is_enabled': False,
                                      'weight': 0.5,
                                  }, {
-                                     'in_node_id': 1,
-                                     'out_node_id': 3,
+                                     'in_node_id': node1.id,
+                                     'out_node_id': node3.id,
                                      'is_enabled': True,
                                      'weight': 1,
                                  },)
@@ -352,8 +356,8 @@ class TestIndividual(NEATBaseTestCase):
         genotype_kwargs_2 = {
             "node_ids": {node1.id, node2.id},
             "connections_dict": ({
-                                     'in_node_id': 1,
-                                     'out_node_id': 2,
+                                     'in_node_id': node1.id,
+                                     'out_node_id': node2.id,
                                      'is_enabled': True,
                                      'weight': 1,
                                  },)

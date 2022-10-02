@@ -12,7 +12,7 @@ _matching_mutation_types = {
 
 
 class NodeTypes:
-    input, hidden, output = _matching_node_types.values()
+    bias, input, hidden, output = _matching_node_types.values()
 
 
 class MutationTypes:
@@ -43,24 +43,33 @@ class Node:
                 """)
                 if not res:
                     raise ValueError('The given connection_historical_id does not exists')
-
-            node_type = node_type or NodeTypes.hidden
-            self._db.execute(f"""
-                INSERT INTO node (node_type_id, connection_historical_id)
-                    VALUES ({node_type}, {connection_historical_id or "NULL"})
-            """)
-            res = self._db.execute(f"""
-                SELECT id
-                FROM node
-                WHERE node_type_id = {node_type} AND connection_historical_id = {connection_historical_id or "NULL"}
-                ORDER BY id DESC
-                LIMIT 1
-            """)
-            if not res:
-                raise ValueError('Incorrect node_type or connection_historical_id given')
-            self.id = res[0][0]
-            self.node_type = node_type
-            self.connection_historical = connection_historical_id
+            if node_type == NodeTypes.bias:
+                self.id = self._db.execute(f"""
+                    SELECT node.id
+                    FROM node
+                    LEFT JOIN node_type nt on node.node_type_id = nt.id
+                    WHERE nt.name = 'Bias'
+                """)[0][0]
+                self.node_type = node_type
+                self.connection_historical = None
+            else:
+                node_type = node_type or NodeTypes.hidden
+                self._db.execute(f"""
+                    INSERT INTO node (node_type_id, connection_historical_id)
+                        VALUES ({node_type}, {connection_historical_id or "NULL"})
+                """)
+                res = self._db.execute(f"""
+                    SELECT id
+                    FROM node
+                    WHERE node_type_id = {node_type} AND connection_historical_id = {connection_historical_id or "NULL"}
+                    ORDER BY id DESC
+                    LIMIT 1
+                """)
+                if not res:
+                    raise ValueError('Incorrect node_type or connection_historical_id given')
+                self.id = res[0][0]
+                self.node_type = node_type
+                self.connection_historical = connection_historical_id
 
 
 class HistoricalConnection:
@@ -249,6 +258,13 @@ class Genotype:
             INSERT INTO genotype (id, parent_1_id, parent_2_id)
                 VALUES ({self.id}, {parent_genotype_ids[0]}, {parent_genotype_ids[1]})
             """)
+
+            node_ids |= set(row[0] for row in self._db.execute(f"""
+                SELECT node.id
+                FROM node
+                LEFT JOIN node_type AS nt on node.node_type_id = nt.id
+                WHERE nt.name = 'Bias'
+            """))
             node_values = ",\n".join((f"({self.id}, {node_id})" for node_id in sorted(node_ids)))
             self._db.execute(f"""
             INSERT INTO genotype_node_rel (genotype_id, node_id)
@@ -299,6 +315,7 @@ class Genotype:
 
         # Assemble necessary node data
         node_mapping = {
+            NodeTypes.bias: {},
             NodeTypes.input: {},
             NodeTypes.hidden: {},
             NodeTypes.output: {},
@@ -312,6 +329,9 @@ class Genotype:
             '    rank = same',
             '    node [shape = square fillcolor = cyan]',
         ]
+        for node_id, name in node_mapping[NodeTypes.bias].items():
+            graph_lines.append(
+                    f'    {name} [label = "{node_id}\\nBias" shape = "diamond"]')
         for node_id, name in node_mapping[NodeTypes.input].items():
             graph_lines.append(
                     f'    {name} [label = "{node_id}"]')
@@ -375,6 +395,7 @@ class Genotype:
 
         "Close graph"
         graph_lines.append("}")
+        graph_lines.append('')
         graph = "\n".join(graph_lines)
         if save_path:
             if os.path.isdir(save_path):
