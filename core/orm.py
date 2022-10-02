@@ -207,15 +207,15 @@ class Connection(HistoricalConnection):
 
 
 class Genotype:
-    def __init__(self, db, genotype_id=None, node_ids=None, connections_dict=None):
+    def __init__(self, db, genotype_id=None, node_ids=None, connections_dict=None, parent_genotype_ids=None):
         self._db = db
-
+        parent_genotype_ids = [] if parent_genotype_ids is None else parent_genotype_ids
         if not (genotype_id or (node_ids and connections_dict)):
             raise ValueError("Must specify either an existing genotype_id or both node_ids and connections_dict")
 
         if genotype_id:
             res = self._db.execute(f"""
-            SELECT id
+            SELECT id, parent_1_id, parent_2_id
             FROM genotype
             WHERE id = {genotype_id}
             ORDER BY id DESC
@@ -223,7 +223,8 @@ class Genotype:
             """)
             if not res:
                 raise ValueError("Specified genotype_id doesn't exist")
-            self.id = genotype_id
+            self.id, *self.parent_ids = res[0]
+            self.parent_ids = set((parent for parent in self.parent_ids if parent))
             res = self._db.execute(f"""
             SELECT connection.id
             FROM connection
@@ -242,9 +243,11 @@ class Genotype:
             FROM genotype
             """)
             self.id = (res[0][0] or 0) + 1
+            self.parent_ids = set((parent for parent in parent_genotype_ids if parent))
+            parent_genotype_ids = list(sorted(self.parent_ids)) + ['NULL', 'NULL']
             self._db.execute(f"""
-            INSERT INTO genotype (id)
-                VALUES ({self.id})            
+            INSERT INTO genotype (id, parent_1_id, parent_2_id)
+                VALUES ({self.id}, {parent_genotype_ids[0]}, {parent_genotype_ids[1]})
             """)
             node_values = ",\n".join((f"({self.id}, {node_id})" for node_id in sorted(node_ids)))
             self._db.execute(f"""
@@ -535,7 +538,7 @@ class Individual:
                 is_enabled = self_enabled
             else:
                 weight = other_weight
-                other_enabled = self_enabled
+                is_enabled = other_enabled
 
             connections_dict.append({
                 'historical_connection_id': hist_conn_id,
@@ -550,7 +553,8 @@ class Individual:
             "genotype_id": None,
             "genotype_kwargs": {
                 'node_ids': node_ids,
-                'connections_dict': tuple(connections_dict)
+                'connections_dict': tuple(connections_dict),
+                "parent_genotype_ids": {self_genotype.id, other_genotype.id},
             },
             "specie_id": specie_id,
             "score": None,

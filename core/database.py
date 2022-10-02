@@ -87,7 +87,19 @@ class Database:
             );
             
         CREATE TABLE genotype (
-            id INTEGER PRIMARY KEY
+            id INTEGER PRIMARY KEY,
+            parent_1_id INTEGER,
+            parent_2_id INTEGER,
+            FOREIGN KEY (parent_1_id)
+                REFERENCES genotype (id)
+                ON DELETE RESTRICT 
+                ON UPDATE CASCADE,
+            FOREIGN KEY  (parent_2_id)
+                REFERENCES genotype (id)
+                ON DELETE RESTRICT 
+                ON UPDATE CASCADE,
+            CHECK (id != genotype.parent_1_id),
+            CHECK (id != genotype.parent_2_id)
             );
                 
         CREATE TABLE connection (
