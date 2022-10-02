@@ -189,12 +189,6 @@ class TestGenotype(NEATBaseTestCase):
         self.assertEqual(1.0, gen ^ genode2)
         self.assertEqual(1 / 3, gen ^ genode3)
         self.assertNotIn(new_node_id, gen.node_ids)
-        gen.add_node(new_node_id)
-        gen_2 = Genotype(self._db, genotype_id=gen.id).duplicate()
-        self.assertNotEqual(gen.id, gen_2.id)
-        self.assertSetEqual(gen.connection_ids, gen.connection_ids - gen_2.connection_ids)
-        self.assertIn(new_node_id, gen.node_ids)
-        self.assertIn(new_node_id, gen_2.node_ids)
 
     def test_draw(self):
         node_b = Node(self._db, 'bias')

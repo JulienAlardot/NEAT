@@ -302,6 +302,80 @@ class Genotype:
         total_connections = max(len(other.historical_connection_ids), len(self.historical_connection_ids))
         return (total_nodes + total_connections - diff_nodes - diff_connections) / (total_nodes + total_connections)
 
+    def as_dict(self):
+        connections = (Connection(self._db, connection_id=connection) for connection in sorted(self.connection_ids))
+        return {
+            'db': self._db,
+            'genotype_id': self.id,
+            'node_ids': self.node_ids,
+            'connection_dicts': tuple({
+                                          'historical_connection_id': connection.historical_id,
+                                          'in_node_id': connection.in_node,
+                                          'out_node_id': connection.out_node,
+                                          'weight': connection.weight,
+                                          'is_enabled': connection.is_enabled,
+                                      } for connection in connections
+                                      ),
+            'parent_genotype_ids': self.parent_ids,
+        }
+
+    def get_mutated(self):
+        split_rate, weight_rate, weight_std, switch_rate = self._db.execute("""
+            SELECT mutation_split_rate, mutation_weight_rate, mutation_weight_std, mutation_switch_rate 
+            FROM model_metadata
+            ORDER BY id DESC
+            LIMIT 1
+        """)[0]
+        mutant = self.as_dict()
+        bias_node_id = list(sorted((row[0] for row in self._db.execute("""
+            SELECT node.id 
+            FROM node 
+            LEFT JOIN node_type AS nt on node.node_type_id = nt.id
+            WHERE nt.name = 'Bias'
+            LIMIT 1
+            """))))
+        mutant['node_ids'].add(bias_node_id)
+        new_connections = list(mutant.get('connection_dicts', []))
+        for connection in mutant.get('connection_dicts', []):
+            historical_id = connection['historical_connection_id']
+            del connection['historical_connection_id']
+            r = random.random()
+            m_rate = weight_rate
+            if r < m_rate:
+                connection['weight'] += (random.random() - .5) * 2 * weight_std
+                continue
+            m_rate += switch_rate
+            if r < m_rate:
+                connection['is_enabled'] = not connection.get('is_enabled', True)
+                continue
+            m_rate += split_rate
+            if r < m_rate:
+                new_node_id = Node(self._db, connection_historical_id=historical_id).id
+                if new_node_id in mutant['node_ids']:
+                    continue
+                connection['is_enabled'] = False
+                mutant['node_ids'].add(new_node_id)
+                new_connections.extend(({
+                                            'in_node_id': connection['in_node'],
+                                            'out_node_id': new_node_id,
+                                            'weight': 1,
+                                            'is_enabled': True,
+                                        }, {
+                                            'in_node_id': bias_node_id,
+                                            'out_node_id': new_node_id,
+                                            'weight': 0.,
+                                            'is_enabled': True,
+                                        }, {
+                                            'in_node_id': new_node_id,
+                                            'out_node_id': connection['out_node'],
+                                            'weight': connection.weight,
+                                            'is_enabled': connection.is_enabled,
+                                        },
+                ))
+
+        del mutant['genotype_id']
+        return mutant
+
     def draw(self, save_path=None):
 
         # graph header declaration
@@ -407,24 +481,6 @@ class Genotype:
             with open(save_path, 'wt', encoding='utf-8') as save:
                 save.write(graph)
         return graph
-
-    def add_node(self, node_id):
-        self._db.execute(f"""INSERT INTO genotype_node_rel (genotype_id, node_id) VALUES ({self.id}, {node_id})""")
-        self.node_ids.add(node_id)
-
-    def duplicate(self):
-        connections_data = self._db.execute(f"""
-        SELECT historical_id, is_enabled, weight 
-        FROM connection
-        WHERE genotype_id = {self.id}
-        """)
-
-        duplicate = Genotype(self._db, node_ids=self.node_ids, connections_dict=({
-            'historical_connection_id': data[0],
-            'is_enabled': data[1],
-            'weight': data[2],
-        } for data in connections_data))
-        return duplicate
 
 
 class Individual:

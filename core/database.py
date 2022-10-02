@@ -177,7 +177,14 @@ class Database:
         CREATE TABLE model_metadata (
             id INTEGER PRIMARY KEY,
             speciation_tresh FLOAT DEFAULT 0.25 NOT NULL,
-            population_size INTEGER DEFAULT 100 NOT NULL
+            population_size INTEGER DEFAULT 100 NOT NULL,
+            mutation_split_rate FLOAT DEFAULT 0.01 NOT NULL, 
+            mutation_weight_rate FLOAT DEFAULT 0.07 NOT NULL, 
+            mutation_switch_rate FLOAT DEFAULT 0.02 NOT NULL,
+            mutation_rate FLOAT GENERATED ALWAYS AS (
+            mutation_split_rate + mutation_weight_rate + mutation_switch_rate
+            ) STORED,
+            mutation_weight_std FLOAT DEFAULT 0.01 NOT NULL
         );
         """)
 
