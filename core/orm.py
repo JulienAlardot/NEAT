@@ -702,8 +702,17 @@ class Individual:
         return res[0][0]
 
     @property
-    def score(self):
+    def score_raw(self):
         return self._score
+
+    @property
+    def score(self):
+        res = self._db.execute(f"""
+            SELECT COUNT(individual.id)
+            FROM individual
+            WHERE individual.specie_id = {self.specie_id}
+        """)[0][0]
+        return self._score // res
 
     @score.setter
     def score(self, value: int):
