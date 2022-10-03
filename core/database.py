@@ -177,6 +177,9 @@ class Database:
         CREATE TABLE model_metadata (
             id INTEGER PRIMARY KEY,
             speciation_tresh FLOAT DEFAULT 0.25 NOT NULL,
+            specie_cull_rate FLOAT DEFAULT 0.5 NOT NULL,
+            reproduction_cloning_rate FLOAT DEFAULT 0.25 NOT NULL,
+            reproduction_interspecie_rate FLOAT DEFAULT 0.001 NOT NULL,
             population_size INTEGER DEFAULT 100 NOT NULL,
             mutation_split_rate FLOAT DEFAULT 0.01 NOT NULL, 
             mutation_weight_rate FLOAT DEFAULT 0.05 NOT NULL, 

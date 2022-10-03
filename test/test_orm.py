@@ -452,6 +452,8 @@ class TestPopulation(NEATBaseTestCase):
 
 
 class TestSpecie(NEATBaseTestCase):
+
+    @mock.patch('random.random', lambda: 1)
     def test_init(self):
         with self.assertRaises(ValueError):
             Specie(self._db, 1)
@@ -491,7 +493,8 @@ class TestSpecie(NEATBaseTestCase):
                                              'is_enabled': True,
                                              'weight': 1,
                                          },)
-                }
+                },
+                "score": 5
             }, {
                 'genotype_kwargs':
                     {
@@ -514,12 +517,16 @@ class TestSpecie(NEATBaseTestCase):
         specie1 = Specie(self._db, ind1.specie_id)
         specie2 = Specie(self._db, ind2.specie_id)
         self.assertEqual(1, specie1.id)
-        self.assertEqual(0, specie1.best_score)
+        self.assertEqual(5, specie1.best_score)
         self.assertSetEqual({1, 2}, specie1.individual_ids)
         self.assertEqual(2, specie2.id)
         self.assertEqual(10, specie2.best_score)
         self.assertSetEqual({3}, specie2.individual_ids)
         self.assertEqual(3, Specie(self._db).id)
+        self.assertSequenceEqual(((2, 1), (5, 0)), specie1.get_sorted_individuals())
+        self.assertSequenceEqual(((2,), (5,)), specie1.get_culled_individuals())
+        self.assertEqual(5, specie1.score)
+        self.assertEqual(2, specie1.select_individual())
 
 
 class TestGeneration(NEATBaseTestCase):

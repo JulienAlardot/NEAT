@@ -1,5 +1,6 @@
 import os.path
 import random
+from collections import deque
 
 from core.activation import sigmoid
 from core.database import Database
@@ -833,6 +834,69 @@ class Specie:
         WHERE individual.specie_id = {self.id}
         """)
         return set((row[0] for row in res))
+
+    def get_sorted_individuals(self, desc=True):
+        res = self._db.execute(f"""
+            SELECT id, score
+            FROM individual
+            WHERE individual.specie_id = {self.id}
+            ORDER BY score {'DESC' if desc else ''}
+        """)
+        return tuple((row[0] for row in res)), tuple((row[1] for row in res))
+
+    def get_culled_individuals(self):
+        cull_rate = self._db.execute("""
+            SELECT specie_cull_rate 
+            FROM model_metadata
+            ORDER BY id
+            LIMIT 1
+        """)[0][0]
+        individuals, scores = self.get_sorted_individuals()
+        individuals = individuals[:round(len(individuals) * cull_rate)]
+        return individuals, scores[:len(individuals)]
+
+    @property
+    def score(self):
+        scores = self.get_culled_individuals()[1]
+        return sum(scores) / len(scores)
+
+    def select_individual(self):
+        individuals, scores = self.get_culled_individuals()
+        individuals = deque(individuals)
+        scores = deque(scores)
+        total_score = sum(scores)
+        r = random.random() * total_score
+        current_score = 0
+        while current_score < r and individuals and scores:
+            individual = individuals.popleft()
+            current_score = scores.popleft()
+        return individual
+
+    def create_newborn(self, species_set):
+        species_set = species_set - self.id
+        cloning_rate, interspecie_rate = self._db.execute("""
+            SELECT reproduction_cloning_rate, reproduction_interspecie_rate
+            FROM model_metadata
+        """)
+
+        if random.random() < cloning_rate:
+            parent = Genotype(self._db, genotype_id=self.select_individual().genotype_id)
+            newborn = parent.get_mutated()
+            newborn.update({
+                'parent_genotype_ids': {parent.id, }
+            })
+            return newborn
+
+        parent_2_specie = self
+        if random.random() < interspecie_rate:
+            parent_2_specie = Specie(self._db, specie_id=species_set.pop())
+        parent_1 = self.select_individual()
+        parent_2 = parent_2_specie.select_individual()
+        while parent_2 == parent_1 and len(self.individual_ids) > 2:
+            parent_2 = parent_2_specie.select_individual()
+
+        newborn = Individual(self._db, individual_id=parent_1) + Individual(self._db, individual_id=parent_2)
+        return newborn['genotype_kwargs']
 
 
 class Generation:
