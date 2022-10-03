@@ -183,7 +183,7 @@ class Database:
             mutation_switch_rate FLOAT DEFAULT 0.02 NOT NULL,
             mutation_add_rate FLOAT DEFAULT 0.02 NOT NULL,
             mutation_rate FLOAT GENERATED ALWAYS AS (
-            mutation_split_rate + mutation_weight_rate + mutation_switch_rate
+            mutation_split_rate + mutation_weight_rate + mutation_switch_rate + mutation_add_rate
             ) STORED,
             mutation_weight_std FLOAT DEFAULT 0.01 NOT NULL
         );
