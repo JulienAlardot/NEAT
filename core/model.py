@@ -1,5 +1,6 @@
 import random
 
+from core.export import Export
 from core.orm import (
     Connection, Generation, Genotype, HistoricalConnection, Individual, Node, NodeTypes,
     Population, Specie,
@@ -74,3 +75,16 @@ class NEATModel:
 
     def get_specie(self, specie_id=None):
         return Specie(self._db, specie_id)
+    
+    #####################
+    #      actions      #
+    #####################
+    
+    def export_individual(self, folderpath, genotype_id=None):
+        genotype_ids = [genotype_id] if genotype_id else self._db.execute(
+            """
+                    SELECT genotype.id
+                    FROM genotype
+                    """)
+        exporter = Export((Genotype(self._db, genotype_id).as_dict() for genotype_id in genotype_ids), folderpath)
+        exporter.render()

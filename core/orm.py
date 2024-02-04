@@ -86,9 +86,9 @@ class HistoricalConnection:
 
         if historical_connection_id:
             res = self._db.execute(f"""
-            SELECT id, in_node_id, out_node_id 
-            FROM connection_historical 
-            WHERE id = {historical_connection_id} 
+            SELECT id, in_node_id, out_node_id
+            FROM connection_historical
+            WHERE id = {historical_connection_id}
             LIMIT 1
             """)
             if not res:
@@ -99,8 +99,8 @@ class HistoricalConnection:
                 raise ValueError("in_node_id and out_node_id must be different nodes")
 
             res = self._db.execute(f"""
-            SELECT id, in_node_id, out_node_id  
-                FROM connection_historical 
+            SELECT id, in_node_id, out_node_id
+                FROM connection_historical
                 WHERE in_node_id = {in_node_id} AND out_node_id = {out_node_id}
                 LIMIT 1
             """)
@@ -181,15 +181,15 @@ class Connection(HistoricalConnection):
                 weight = weight if weight is not None else 1.0
                 self._db.execute(f"""
                 INSERT INTO connection (historical_id, genotype_id, is_enabled, weight)
-                    VALUES ({self.historical_id}, {genotype_id}, {is_enabled}, {weight}) 
+                    VALUES ({self.historical_id}, {genotype_id}, {is_enabled}, {weight})
                 """)
 
                 res = self._db.execute(f"""
                 SELECT id
                 FROM connection
-                WHERE (historical_id = {self.historical_id} 
-                        AND genotype_id = {genotype_id} 
-                        AND is_enabled = {"TRUE" if is_enabled else "FALSE"} 
+                WHERE (historical_id = {self.historical_id}
+                        AND genotype_id = {genotype_id}
+                        AND is_enabled = {"TRUE" if is_enabled else "FALSE"}
                         AND weight = {weight})
                 ORDER BY id DESC
                 LIMIT 1
@@ -276,7 +276,7 @@ class Genotype:
             node_values = ",\n".join((f"({self.id}, {node_id})" for node_id in sorted(node_ids)))
             self._db.execute(f"""
             INSERT INTO genotype_node_rel (genotype_id, node_id)
-                VALUES {node_values} 
+                VALUES {node_values}
             """)
             res = self._db.execute(f"""
             SELECT node_id
@@ -338,8 +338,8 @@ class Genotype:
         """)[0]
         mutant = self.as_dict()
         bias_node_id = list(sorted((row[0] for row in self._db.execute("""
-            SELECT node.id 
-            FROM node 
+            SELECT node.id
+            FROM node
             LEFT JOIN node_type AS nt on node.node_type_id = nt.id
             WHERE nt.name = 'Bias'
             LIMIT 1
@@ -610,11 +610,11 @@ class Individual:
             res = self._db.execute(f"""
             SELECT id
             FROM individual
-            WHERE ( genotype_id = {genotype_id} 
+            WHERE ( genotype_id = {genotype_id}
                 AND specie_id = {specie_id}
                 AND score = {score}
                 AND population_id = {population_id}
-                )    
+                )
             ORDER BY id DESC
             LIMIT 1
             """)
@@ -651,10 +651,10 @@ class Individual:
 
         connections_data = self._db.execute(f"""
         SELECT ch.id, ch.in_node_id, ch.out_node_id, conn_1.weight, conn_1.is_enabled, conn_2.weight, conn_2.is_enabled
-            FROM connection_historical AS ch 
+            FROM connection_historical AS ch
             LEFT JOIN connection AS conn_1 ON ch.id = conn_1.historical_id
             LEFT OUTER JOIN connection AS conn_2 ON ch.id = conn_2.historical_id
-            WHERE ( ch.id IN {tuple(hist_conn_ids)} 
+            WHERE ( ch.id IN {tuple(hist_conn_ids)}
                 AND conn_1.genotype_id = {self_genotype.id}
                 AND conn_2.genotype_id = {other_genotype.id}
                 )

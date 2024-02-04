@@ -2,11 +2,11 @@ from setuptools import setup
 
 setup(
         name='NEAT',
-        version='',
+    version='0.0.1',
         packages=[''],
         url='',
         license='',
-        author='Julien',
-        author_email='',
+    author='Julien Alardot',
+    author_email='alardot.j@gmail.com',
         description=''
 )

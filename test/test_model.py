@@ -1,3 +1,4 @@
+import os
 from unittest import mock
 
 from core.model import NEATModel
@@ -54,3 +55,5 @@ class TestNeatModel(NEATBaseTestCaseMemory):
         res = self._db.execute("""SELECT id, historical_id, genotype_id, is_enabled, weight FROM connection""")
         self.assertSequenceEqual(
             [((i * 10) + j + 1, j + 1, i + 1, True, mocked_random) for i in range(10) for j in range(10)], res)
+        
+        model.export_individual(os.path.dirname(__file__), 1)
