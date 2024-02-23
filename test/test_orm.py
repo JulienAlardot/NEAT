@@ -21,13 +21,16 @@ class TestMetaData(TestCase):
         for node_type in (NodeTypes.input, NodeTypes.output):
             Node(self._db, node_type)
         with self.assertRaises(ValueError):
-            ind_dicts = ({
-                             'genotype_kwargs': {
-                                 "node_ids": {1, 2},
-                                 "connection_dicts": (
-                                     {'in_node_id': 1, 'out_node_id': 2, },)
-                             }
-                         },)
+            ind_dicts = (
+                {
+                    'genotype_kwargs': {
+                        "node_ids": {1, 2},
+                        "connection_dicts": (
+                            {'in_node_id': 1, 'out_node_id': 2, },
+                        )
+                    }
+                },
+            )
             Population(self._db, generation_id=1, individual_dicts=ind_dicts)
 
 
@@ -107,7 +110,7 @@ class TestConnection(NEATBaseTestCase):
                 VALUES (1), (2)
             """
         )
-        
+
         with self.assertRaises(ValueError):
             Connection(self._db, connection_id=1)
 
@@ -177,20 +180,22 @@ class TestGenotype(NEATBaseTestCase):
         self.assertSetEqual({1, }, gen.connection_ids)
         self.assertSetEqual({1, 2, }, gen.node_ids)
         genode2 = Genotype(self._db, node_ids={1, 2, }, connection_dicts=connection_dicts)
-        connection_dicts_2 = ({
-                                  'in_node_id': 1,
-                                  'out_node_id': 2,
-                                  'is_enabled': False,
-                                  'weight': 0.5,
-                              }, {
-                                  'in_node_id': 3,
-                                  'out_node_id': 7,
-                                  'is_enabled': True,
-                                  'weight': 1,
-                              },)
+        connection_dicts_2 = (
+            {
+                'in_node_id': 1,
+                'out_node_id': 2,
+                'is_enabled': False,
+                'weight': 0.5,
+            }, {
+                'in_node_id': 3,
+                'out_node_id': 7,
+                'is_enabled': True,
+                'weight': 1,
+            },
+        )
         genode3 = Genotype(self._db, node_ids={1, 2, 3, 4, 5, 6, 7}, connection_dicts=connection_dicts_2)
         with self.assertRaises(TypeError):
-            gen ^ {6, }
+            _ = gen ^ {6, }
         self.assertEqual(1.0, gen ^ genode2)
         self.assertEqual(1 / 3, gen ^ genode3)
         self.assertNotIn(new_node_id, gen.node_ids)
@@ -203,47 +208,48 @@ class TestGenotype(NEATBaseTestCase):
         node_h2 = Node(self._db, 'hidden')
         node_o1 = Node(self._db, 'output')
         node_o2 = Node(self._db, 'output')
-        connection_dicts = ({
-                                'in_node_id': node_i1.id,
-                                'out_node_id': node_o1.id,
-                                'is_enabled': True,
-                                'weight': 1,
-                            }, {
-                                'in_node_id': node_i1.id,
-                                'out_node_id': node_o2.id,
-                                'is_enabled': True,
-                                'weight': 0,
-                            }, {
-                                'in_node_id': node_i2.id,
-                                'out_node_id': node_o1.id,
-                                'is_enabled': True,
-                                'weight': 10000,
-                            }, {
-                                'in_node_id': node_i2.id,
-                                'out_node_id': node_o2.id,
-                                'is_enabled': False,
-                                'weight': 10000,
-                            }, {
-                                'in_node_id': node_i2.id,
-                                'out_node_id': node_h1.id,
-                                'is_enabled': True,
-                                'weight': -10000,
-                            }, {
-                                'in_node_id': node_h1.id,
-                                'out_node_id': node_h2.id,
-                                'is_enabled': True,
-                                'weight': -1,
-                            }, {
-                                'in_node_id': node_h2.id,
-                                'out_node_id': node_o1.id,
-                                'is_enabled': True,
-                                'weight': 0.5,
-                            }, {
-                                'in_node_id': node_h2.id,
-                                'out_node_id': node_o2.id,
-                                'is_enabled': False,
-                                'weight': -0.5,
-                            },
+        connection_dicts = (
+            {
+                'in_node_id': node_i1.id,
+                'out_node_id': node_o1.id,
+                'is_enabled': True,
+                'weight': 1,
+            }, {
+                'in_node_id': node_i1.id,
+                'out_node_id': node_o2.id,
+                'is_enabled': True,
+                'weight': 0,
+            }, {
+                'in_node_id': node_i2.id,
+                'out_node_id': node_o1.id,
+                'is_enabled': True,
+                'weight': 10000,
+            }, {
+                'in_node_id': node_i2.id,
+                'out_node_id': node_o2.id,
+                'is_enabled': False,
+                'weight': 10000,
+            }, {
+                'in_node_id': node_i2.id,
+                'out_node_id': node_h1.id,
+                'is_enabled': True,
+                'weight': -10000,
+            }, {
+                'in_node_id': node_h1.id,
+                'out_node_id': node_h2.id,
+                'is_enabled': True,
+                'weight': -1,
+            }, {
+                'in_node_id': node_h2.id,
+                'out_node_id': node_o1.id,
+                'is_enabled': True,
+                'weight': 0.5,
+            }, {
+                'in_node_id': node_h2.id,
+                'out_node_id': node_o2.id,
+                'is_enabled': False,
+                'weight': -0.5,
+            },
         )
         genome = Genotype(
             self._db,
@@ -271,17 +277,19 @@ class TestIndividual(NEATBaseTestCase):
         node3 = Node(self._db, NodeTypes.output)
         genotype_kwargs = {
             "node_ids": {node1.id, node2.id, node3.id},
-            "connection_dicts": ({
-                                     'in_node_id': 1,
-                                     'out_node_id': 2,
-                                     'is_enabled': False,
-                                     'weight': 0.5,
-                                 }, {
-                                     'in_node_id': 1,
-                                     'out_node_id': 3,
-                                     'is_enabled': True,
-                                     'weight': 1,
-                                 },)
+            "connection_dicts": (
+                {
+                    'in_node_id': 1,
+                    'out_node_id': 2,
+                    'is_enabled': False,
+                    'weight': 0.5,
+                }, {
+                    'in_node_id': 1,
+                    'out_node_id': 3,
+                    'is_enabled': True,
+                    'weight': 1,
+                },
+            )
         }
 
         with self.assertRaises(ValueError):
@@ -356,27 +364,31 @@ class TestIndividual(NEATBaseTestCase):
         self._db.execute("""INSERT INTO population (id, generation_id) VALUES (1,1)""")
         genotype_kwargs = {
             "node_ids": {node1.id, node2.id, node3.id},
-            "connection_dicts": ({
-                                     'in_node_id': node1.id,
-                                     'out_node_id': node2.id,
-                                     'is_enabled': False,
-                                     'weight': 0.5,
-                                 }, {
-                                     'in_node_id': node1.id,
-                                     'out_node_id': node3.id,
-                                     'is_enabled': True,
-                                     'weight': 1,
-                                 },)
+            "connection_dicts": (
+                {
+                    'in_node_id': node1.id,
+                    'out_node_id': node2.id,
+                    'is_enabled': False,
+                    'weight': 0.5,
+                }, {
+                    'in_node_id': node1.id,
+                    'out_node_id': node3.id,
+                    'is_enabled': True,
+                    'weight': 1,
+                },
+            )
         }
         ind1 = Individual(self._db, genotype_kwargs=genotype_kwargs, population_id=1)
         genotype_kwargs_2 = {
             "node_ids": {node1.id, node2.id},
-            "connection_dicts": ({
-                                     'in_node_id': node1.id,
-                                     'out_node_id': node2.id,
-                                     'is_enabled': True,
-                                     'weight': 1,
-                                 },)
+            "connection_dicts": (
+                {
+                    'in_node_id': node1.id,
+                    'out_node_id': node2.id,
+                    'is_enabled': True,
+                    'weight': 1,
+                },
+            )
         }
         ind2 = Individual(self._db, genotype_kwargs=genotype_kwargs_2, population_id=1)
         ind3 = Individual(**(ind1 + ind2))
@@ -409,32 +421,36 @@ class TestPopulation(NEATBaseTestCase):
             {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connection_dicts": ({
-                                             'in_node_id': 1,
-                                             'out_node_id': 2,
-                                             'is_enabled': False,
-                                             'weight': 0.5,
-                                         }, {
-                                             'in_node_id': 1,
-                                             'out_node_id': 3,
-                                             'is_enabled': True,
-                                             'weight': 1,
-                                         },)
+                    "connection_dicts": (
+                        {
+                            'in_node_id': 1,
+                            'out_node_id': 2,
+                            'is_enabled': False,
+                            'weight': 0.5,
+                        }, {
+                            'in_node_id': 1,
+                            'out_node_id': 3,
+                            'is_enabled': True,
+                            'weight': 1,
+                        },
+                    )
                 }
             }, {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connection_dicts": ({
-                                             'in_node_id': 1,
-                                             'out_node_id': 2,
-                                             'is_enabled': False,
-                                             'weight': 0.5,
-                                         }, {
-                                             'in_node_id': 1,
-                                             'out_node_id': 3,
-                                             'is_enabled': True,
-                                             'weight': 1,
-                                         },)
+                    "connection_dicts": (
+                        {
+                            'in_node_id': 1,
+                            'out_node_id': 2,
+                            'is_enabled': False,
+                            'weight': 0.5,
+                        }, {
+                            'in_node_id': 1,
+                            'out_node_id': 3,
+                            'is_enabled': True,
+                            'weight': 1,
+                        },
+                    )
                 }
             }, {
                 'genotype_kwargs':
@@ -486,32 +502,36 @@ class TestSpecie(NEATBaseTestCase):
             {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connection_dicts": ({
-                                             'in_node_id': 1,
-                                             'out_node_id': 2,
-                                             'is_enabled': False,
-                                             'weight': 0.5,
-                                         }, {
-                                             'in_node_id': 1,
-                                             'out_node_id': 3,
-                                             'is_enabled': True,
-                                             'weight': 1,
-                                         },)
+                    "connection_dicts": (
+                        {
+                            'in_node_id': 1,
+                            'out_node_id': 2,
+                            'is_enabled': False,
+                            'weight': 0.5,
+                        }, {
+                            'in_node_id': 1,
+                            'out_node_id': 3,
+                            'is_enabled': True,
+                            'weight': 1,
+                        },
+                    )
                 }
             }, {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connection_dicts": ({
-                                             'in_node_id': 1,
-                                             'out_node_id': 2,
-                                             'is_enabled': False,
-                                             'weight': 0.5,
-                                         }, {
-                                             'in_node_id': 1,
-                                             'out_node_id': 3,
-                                             'is_enabled': True,
-                                             'weight': 1,
-                                         },)
+                    "connection_dicts": (
+                        {
+                            'in_node_id': 1,
+                            'out_node_id': 2,
+                            'is_enabled': False,
+                            'weight': 0.5,
+                        }, {
+                            'in_node_id': 1,
+                            'out_node_id': 3,
+                            'is_enabled': True,
+                            'weight': 1,
+                        },
+                    )
                 },
                 "score": 5
             }, {
@@ -562,32 +582,36 @@ class TestGeneration(NEATBaseTestCase):
             {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connection_dicts": ({
-                                             'in_node_id': 1,
-                                             'out_node_id': 2,
-                                             'is_enabled': False,
-                                             'weight': 0.5,
-                                         }, {
-                                             'in_node_id': 1,
-                                             'out_node_id': 3,
-                                             'is_enabled': True,
-                                             'weight': 1,
-                                         },)
+                    "connection_dicts": (
+                        {
+                            'in_node_id': 1,
+                            'out_node_id': 2,
+                            'is_enabled': False,
+                            'weight': 0.5,
+                        }, {
+                            'in_node_id': 1,
+                            'out_node_id': 3,
+                            'is_enabled': True,
+                            'weight': 1,
+                        },
+                    )
                 }
             }, {
                 'genotype_kwargs': {
                     "node_ids": {node1.id, node2.id, node3.id},
-                    "connection_dicts": ({
-                                             'in_node_id': 1,
-                                             'out_node_id': 2,
-                                             'is_enabled': False,
-                                             'weight': 0.5,
-                                         }, {
-                                             'in_node_id': 1,
-                                             'out_node_id': 3,
-                                             'is_enabled': True,
-                                             'weight': 1,
-                                         },)
+                    "connection_dicts": (
+                        {
+                            'in_node_id': 1,
+                            'out_node_id': 2,
+                            'is_enabled': False,
+                            'weight': 0.5,
+                        }, {
+                            'in_node_id': 1,
+                            'out_node_id': 3,
+                            'is_enabled': True,
+                            'weight': 1,
+                        },
+                    )
                 }
             }, {
                 'genotype_kwargs':
