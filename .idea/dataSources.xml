@@ -14,7 +14,7 @@
       </libraries>
     </data-source>
     <data-source source="LOCAL" name="template" uuid="5076abb8-99c1-4505-88a6-9153e5e67019">
-      <driver-ref>sqlite.xerial</driver-ref>
+      <driver-ref>be02c82a-82af-458d-beb4-b4532e4bb048</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
       <jdbc-url>jdbc:sqlite:D:\Utilisateurs\Julien\Documents\Programming\NEAT\data\template.sqlite</jdbc-url>
@@ -26,7 +26,7 @@
       </libraries>
     </data-source>
     <data-source source="LOCAL" name="template linux" uuid="56b5c0fb-9b6e-4089-9705-b7266f5c983c">
-      <driver-ref>sqlite.xerial</driver-ref>
+      <driver-ref>96668e04-0cc3-45bb-9a00-59e6f8142e5e</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
       <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/data/template.sqlite</jdbc-url>
@@ -38,7 +38,7 @@
       </libraries>
     </data-source>
     <data-source source="LOCAL" name="test linux" uuid="1635acde-eac6-479c-aca8-2cd1f1d2ac9c">
-      <driver-ref>sqlite.xerial</driver-ref>
+      <driver-ref>be02c82a-82af-458d-beb4-b4532e4bb048</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
       <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/test/test.sqlite</jdbc-url>
