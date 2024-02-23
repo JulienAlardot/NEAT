@@ -1,6 +1,6 @@
 
 *.pyc
-/data/template.sqlite
+/data/template.sqlite*
 
 /test/test.sqlite
 /test/genotype*.dot
