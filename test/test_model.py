@@ -2,7 +2,7 @@ import os
 from unittest import mock
 
 from core.model import NEATModel
-from core.orm import NodeTypes
+from core.orm.enums import NodeTypes
 from test import NEATBaseTestCaseMemory
 
 

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from core.database import Database
+from core.orm.database import Database
 
 
 class NEATBaseTestCase(TestCase):

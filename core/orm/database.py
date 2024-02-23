@@ -1,13 +1,17 @@
 import os
 import sqlite3 as sql
 
+from core import PATH
+
 
 class Database:
     def __init__(self, name, override=False):
         name = name + ".sqlite" if (not name.endswith('.sqlite') and name != ':memory:') else name
         name = os.path.abspath(name) if name != ':memory:' else name
-        if name in os.listdir(os.path.dirname(__file__)) and not override:
-            raise FileExistsError('A database with this name already exists')
+        if os.path.exists(name) and not override:
+            raise FileExistsError("A database with this name already exists")
+        elif name != ':memory:' and not os.path.exists(name) and not override:
+            raise FileNotFoundError("No database with this name exists")
         
         self._filename = name
         self._name = '.'.join(name.split('.')[:-1])
@@ -205,3 +209,6 @@ class Database:
         if "INSERT INTO" in query or "UPDATE" in query:
             self._con.commit()
         return res.fetchall()
+
+
+_db = Database(f'{PATH}/data/template', override=True)

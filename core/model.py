@@ -1,10 +1,13 @@
 import random
 
 from core.export import Export
-from core.orm import (
-    Connection, Generation, Genotype, HistoricalConnection, Individual, Node, NodeTypes,
-    Population, Specie,
-)
+from core.orm.connections import HistoricalConnection, Connection
+from core.orm.enums import NodeTypes
+from core.orm.generation import Generation
+from core.orm.genotype import Genotype
+from core.orm.individual import Specie, Individual
+from core.orm.node import Node
+from core.orm.population import Population
 
 
 class NEATModel:

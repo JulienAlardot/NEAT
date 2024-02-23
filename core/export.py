@@ -1,6 +1,7 @@
 import os.path
 
-from core.orm import Node, NodeTypes
+from core.orm.enums import NodeTypes
+from core.orm.node import Node
 
 
 class Export(object):

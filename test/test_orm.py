@@ -1,11 +1,14 @@
 import os.path
 from unittest import TestCase, mock
 
-from core.database import Database
-from core.orm import (
-    Connection, Generation, Genotype, HistoricalConnection, Individual, MutationTypes, Node, NodeTypes,
-    Population, Specie,
-)
+from core.orm.connections import HistoricalConnection, Connection
+from core.orm.database import Database
+from core.orm.enums import MutationTypes, NodeTypes
+from core.orm.generation import Generation
+from core.orm.genotype import Genotype
+from core.orm.individual import Specie, Individual
+from core.orm.node import Node
+from core.orm.population import Population
 from test import NEATBaseTestCase
 
 
@@ -98,11 +101,13 @@ class TestHistoricalConnection(NEATBaseTestCase):
 
 class TestConnection(NEATBaseTestCase):
     def test_init(self):
-        self._db.execute("""
-        INSERT INTO genotype (id)
-            VALUES (1), (2)
-        """)
-
+        self._db.execute(
+            """
+            INSERT INTO genotype (id)
+                VALUES (1), (2)
+            """
+        )
+        
         with self.assertRaises(ValueError):
             Connection(self._db, connection_id=1)
 
@@ -240,9 +245,19 @@ class TestGenotype(NEATBaseTestCase):
                                 'weight': -0.5,
                             },
         )
-        genome = Genotype(self._db, node_ids={
-            node_b.id, node_i1.id, node_i2.id, node_h1.id, node_h2.id, node_o1.id, node_o2.id
-        }, connection_dicts=connection_dicts)
+        genome = Genotype(
+            self._db,
+            node_ids={
+                node_b.id,
+                node_i1.id,
+                node_i2.id,
+                node_h1.id,
+                node_h2.id,
+                node_o1.id,
+                node_o2.id,
+            },
+            connection_dicts=connection_dicts
+        )
         path = os.path.join(os.path.dirname(__file__), 'test_genome.dot')
         with open(path, 'rt', encoding='utf-8') as test:
             test_check = test.read()
@@ -311,17 +326,21 @@ class TestIndividual(NEATBaseTestCase):
         self.assertEqual(2, ind3.specie_id)
         self.assertEqual(3, ind3.genotype_id)
         self.assertEqual(1, ind3.population_id)
-        ind4 = Individual(self._db, population_id=2, genotype_kwargs={
-            "node_ids": {1, 2},
-            "connection_dicts": (
-                {
-                    'in_node_id': 1,
-                    'out_node_id': 2,
-                    'is_enabled': True,
-                    'weight': 1.0,
-                },
-            ),
-        })
+        ind4 = Individual(
+            self._db,
+            population_id=2,
+            genotype_kwargs={
+                "node_ids": {1, 2},
+                "connection_dicts": (
+                    {
+                        'in_node_id': 1,
+                        'out_node_id': 2,
+                        'is_enabled': True,
+                        'weight': 1.0,
+                    },
+                ),
+            }
+        )
         self.assertEqual(4, ind4.id)
         self.assertEqual(0, ind4.score_raw)
         self.assertEqual(3, ind4.specie_id)
