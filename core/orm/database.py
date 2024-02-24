@@ -12,12 +12,12 @@ class Database:
             raise FileExistsError("A database with this name already exists")
         elif name != ':memory:' and not os.path.exists(name) and not override:
             raise FileNotFoundError("No database with this name exists")
-        
+
         self._filename = name
         self._name = '.'.join(name.split('.')[:-1])
         self._con = self._connect()
         self._cursor = self._create_cursor()
-        
+
         if override:
             self._clear()
         try:
@@ -25,13 +25,13 @@ class Database:
             self._con.commit()
         except sql.OperationalError:
             pass
-    
+
     def _connect(self):
         return sql.connect(self._filename)
-    
+
     def _create_cursor(self):
         return self._con.cursor()
-    
+
     def _clear(self):
         self._cursor.executescript(
             """
@@ -43,7 +43,7 @@ class Database:
                     PRAGMA foreign_keys = ON;
                     """)
         self._con.commit()
-    
+
     def init_db(self):
         self._cursor.executescript(
             """
@@ -197,7 +197,7 @@ class Database:
                         mutation_weight_std FLOAT DEFAULT 0.01 NOT NULL
                     );
                     """)
-    
+
     def execute(self, query):
         query += '' if query.endswith(';') else ';'
         query = query.replace('!= NULL', 'IS NOT NULL')

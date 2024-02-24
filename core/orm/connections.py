@@ -1,7 +1,7 @@
 class HistoricalConnection:
     def __init__(self, db, historical_connection_id=None, in_node_id=None, out_node_id=None):
         self._db = db
-        
+
         if historical_connection_id:
             res = self._db.execute(
                 f"""
@@ -16,7 +16,7 @@ class HistoricalConnection:
         elif in_node_id and out_node_id:
             if in_node_id == out_node_id:
                 raise ValueError("in_node_id and out_node_id must be different nodes")
-            
+
             res = self._db.execute(
                 f"""
             SELECT id, in_node_id, out_node_id
@@ -58,7 +58,7 @@ class Connection(HistoricalConnection):
         conn_id = None
         if not connection_id and not genotype_id:
             raise ValueError("Must specify a genotype_id or a connection_id")
-        
+
         if connection_id:
             res = self._db.execute(
                 f"""
@@ -74,7 +74,7 @@ class Connection(HistoricalConnection):
         super().__init__(db, historical_connection_id, in_node_id, out_node_id)
         self.historical_id = int(self.id)
         self.id = conn_id
-        
+
         if not connection_id:
             res = self._db.execute(
                 f"""
@@ -86,7 +86,7 @@ class Connection(HistoricalConnection):
             """)
             if not res:
                 raise ValueError("Specified genotype_id doesn't exist")
-            
+
             res = self._db.execute(
                 f"""
             SELECT id, genotype_id, is_enabled, weight
@@ -95,7 +95,7 @@ class Connection(HistoricalConnection):
             ORDER BY id DESC
             LIMIT 1
             """)
-            
+
             if res:
                 self.id, self.genotype_id, self._is_enabled, self._weight = res[0]
                 if is_enabled:
@@ -110,7 +110,7 @@ class Connection(HistoricalConnection):
                 INSERT INTO connection (historical_id, genotype_id, is_enabled, weight)
                     VALUES ({self.historical_id}, {genotype_id}, {is_enabled}, {weight})
                 """)
-                
+
                 res = self._db.execute(
                     f"""
                 SELECT id
@@ -122,16 +122,16 @@ class Connection(HistoricalConnection):
                 ORDER BY id DESC
                 LIMIT 1
                 """)
-                
+
                 self.id = res[0][0]
                 self._weight = weight
                 self._is_enabled = is_enabled
                 self.genotype_id = genotype_id
-    
+
     @property
     def is_enabled(self):
         return self._is_enabled
-    
+
     @is_enabled.setter
     def is_enabled(self, value: bool):
         self._db.execute(
@@ -141,11 +141,11 @@ class Connection(HistoricalConnection):
         WHERE id = {self.id}
         """)
         self._is_enabled = value
-    
+
     @property
     def weight(self):
         return self._weight
-    
+
     @weight.setter
     def weight(self, value: float):
         self._db.execute(f"""UPDATE connection SET weight = {value} WHERE id = {self.id}""")

@@ -7,10 +7,10 @@ class Node:
         self._db = db
         self.input_sum = 0
         self._activation_func = activation_func
-        
+
         if isinstance(node_type, str):
             node_type = getattr(NodeTypes, node_type.lower())
-        
+
         if node_id:
             res = self._db.execute(
                 f"""
@@ -22,7 +22,7 @@ class Node:
         else:
             if not connection_historical_id and not node_type:
                 raise ValueError('A node must have a connection_historical_id or a node_type specified')
-            
+
             if connection_historical_id:
                 res = self._db.execute(
                     f"""
@@ -60,7 +60,7 @@ class Node:
                 self.id = res[0][0]
                 self.node_type = node_type
                 self.connection_historical = connection_historical_id
-    
+
     @property
     def output(self):
         return self._activation_func(self.input_sum)

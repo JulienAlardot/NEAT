@@ -17,7 +17,7 @@ class Generation:
             self._db.execute("""INSERT INTO generation DEFAULT VALUES""")
             res = self._db.execute("""SELECT MAX(id) FROM generation""")
             self.id = res[0][0]
-    
+
     @property
     def best_score(self):
         res = self._db.execute(
@@ -28,7 +28,7 @@ class Generation:
         WHERE pop.generation_id = {self.id}
         """)
         return res[0][0] or 0
-    
+
     @property
     def individual_ids(self):
         res = self._db.execute(

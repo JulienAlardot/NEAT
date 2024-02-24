@@ -38,11 +38,13 @@ class NEATModel:
         individual_dict = {'genotype_kwargs': {"node_ids": node_ids, "connection_dicts": connections}}
         individual_dicts = (individual_dict for i in range(pop_size))
 
-        self._population = self.get_population(generation_id=self._generation.id, individual_dicts=tuple(
+        self._population = self.get_population(
+            generation_id=self._generation.id, individual_dicts=tuple(
                 individual_dicts))
 
     def initialize(self, size_input, size_output, pop_size=100, speciation_tresh=0.25):
-        self._db.execute(f"""
+        self._db.execute(
+            f"""
         INSERT INTO model_metadata (speciation_tresh, population_size) VALUES ({speciation_tresh}, {pop_size})
         """)
         self._initialize_nodes(size_input, size_output)
@@ -52,10 +54,12 @@ class NEATModel:
     # classes shortcuts #
     #####################
 
-    def get_connection(self, historical_connection_id=None, in_node_id=None, out_node_id=None, genotype_id=None,
-                       connection_id=None, weight=None, is_enabled=None):
-        return Connection(self._db, historical_connection_id, in_node_id, out_node_id, genotype_id, connection_id,
-                          weight, is_enabled)
+    def get_connection(
+            self, historical_connection_id=None, in_node_id=None, out_node_id=None, genotype_id=None,
+            connection_id=None, weight=None, is_enabled=None):
+        return Connection(
+            self._db, historical_connection_id, in_node_id, out_node_id, genotype_id, connection_id,
+            weight, is_enabled)
 
     def get_generation(self, generation_id=None):
         return Generation(self._db, generation_id)
@@ -66,8 +70,9 @@ class NEATModel:
     def get_hist_connection(self, historical_connection_id=None, in_node_id=None, out_node_id=None):
         return HistoricalConnection(self._db, historical_connection_id, in_node_id, out_node_id)
 
-    def get_individual(self, individual_id=None, population_id=None, genotype_id=None, genotype_kwargs=None,
-                       specie_id=None, score=None):
+    def get_individual(
+            self, individual_id=None, population_id=None, genotype_id=None, genotype_kwargs=None,
+            specie_id=None, score=None):
         return Individual(self._db, individual_id, population_id, genotype_id, genotype_kwargs, specie_id, score)
 
     def get_node(self, node_type=None, connection_historical_id=None, node_id=None):
@@ -78,11 +83,11 @@ class NEATModel:
 
     def get_specie(self, specie_id=None):
         return Specie(self._db, specie_id)
-    
+
     #####################
     #      actions      #
     #####################
-    
+
     def export_individual(self, folderpath, genotype_id=None):
         genotype_ids = [genotype_id] if genotype_id else self._db.execute(
             """

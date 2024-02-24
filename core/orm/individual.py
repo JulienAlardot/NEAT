@@ -26,15 +26,15 @@ class Individual:
             if not res:
                 raise ValueError("Specified individual_id doesn't exist")
             self.id, self.genotype_id, self.specie_id, self._score, self.population_id = res[0]
-        
+
         else:
             test_exists = {"population": population_id}
             if specie_id:
                 test_exists["specie"] = specie_id
-            
+
             if genotype_id:
                 test_exists["genotype"] = genotype_id
-            
+
             for table, value in test_exists.items():
                 res = self._db.execute(
                     f"""
@@ -46,10 +46,10 @@ class Individual:
                 """)
                 if not res:
                     raise ValueError(f"Specified {table}_id doesn't exist")
-            
+
             if not genotype_id and genotype_kwargs:
                 genotype_id = Genotype(self._db, **genotype_kwargs).id
-            
+
             if not specie_id:  # Find specie
                 genotype = Genotype(self._db, genotype_id=genotype_id)
                 res = self._db.execute(
@@ -92,13 +92,13 @@ class Individual:
             ORDER BY id DESC
             LIMIT 1
             """)
-            
+
             self.id = res[0][0]
             self.population_id = population_id
             self._score = score
             self.specie_id = specie_id
             self.genotype_id = genotype_id
-    
+
     def __add__(self, other):
         if not isinstance(other, Individual):
             raise TypeError(
@@ -111,18 +111,18 @@ class Individual:
         specie_id = None if self.specie_id != other.specie_id else self.specie_id
         node_ids = set()
         connection_dicts = []
-        
+
         self_genotype = Genotype(db, self.genotype_id)
         other_genotype = Genotype(db, other.genotype_id)
-        
+
         inner_hist_conn_ids = self_genotype.historical_connection_ids & other_genotype.historical_connection_ids
         outer_hist_conn_ids = self_genotype.historical_connection_ids | other_genotype.historical_connection_ids
         hist_conn_ids = set(inner_hist_conn_ids)
-        
+
         for conn_id in (outer_hist_conn_ids - inner_hist_conn_ids):
             if bool(round(random.random())):
                 hist_conn_ids.add(conn_id)
-        
+
         connections_data = self._db.execute(
             f"""
         SELECT ch.id, ch.in_node_id, ch.out_node_id, conn_1.weight, conn_1.is_enabled, conn_2.weight, conn_2.is_enabled
@@ -134,7 +134,7 @@ class Individual:
                 AND conn_2.genotype_id = {other_genotype.id}
                 )
         """)
-        
+
         for row in connections_data:
             hist_conn_id, in_node_id, out_node_id, self_weight, self_enabled, other_weight, other_enabled = row
             node_ids |= {in_node_id, out_node_id}
@@ -144,14 +144,14 @@ class Individual:
             else:
                 weight = other_weight
                 is_enabled = other_enabled
-            
+
             connection_dicts.append(
                 {
                     'historical_connection_id': hist_conn_id,
                     'weight': weight,
                     'is_enabled': is_enabled,
                 })
-        
+
         return {
             "db": db,
             "individual_id": None,
@@ -165,7 +165,7 @@ class Individual:
             "specie_id": specie_id,
             "score": None,
         }
-    
+
     @property
     def speciation_threshold(self):
         res = self._db.execute(
@@ -178,11 +178,11 @@ class Individual:
         if not res:
             raise ValueError("There must be at least one row in model_metadata table to fetch data from")
         return res[0][0]
-    
+
     @property
     def score_raw(self):
         return self._score
-    
+
     @property
     def score(self):
         res = self._db.execute(
@@ -192,7 +192,7 @@ class Individual:
             WHERE individual.specie_id = {self.specie_id}
         """)[0][0]
         return self._score // res
-    
+
     @score.setter
     def score(self, value: int):
         self._db.execute(f"""UPDATE individual SET score = {value} WHERE id = {self.id}""")
@@ -218,7 +218,7 @@ class Specie:
             self._db.execute("""INSERT INTO specie DEFAULT VALUES""")
             res = self._db.execute("""SELECT MAX(id) FROM specie""")
             self.id = res[0][0]
-    
+
     @property
     def best_score(self):
         res = self._db.execute(
@@ -228,7 +228,7 @@ class Specie:
         WHERE individual.specie_id = {self.id}
         """)
         return res[0][0] or 0
-    
+
     @property
     def individual_ids(self):
         res = self._db.execute(
@@ -238,7 +238,7 @@ class Specie:
         WHERE individual.specie_id = {self.id}
         """)
         return set((row[0] for row in res))
-    
+
     def get_sorted_individuals(self, desc=True):
         res = self._db.execute(
             f"""
@@ -248,7 +248,7 @@ class Specie:
             ORDER BY score {'DESC' if desc else ''}
         """)
         return tuple((row[0] for row in res)), tuple((row[1] for row in res))
-    
+
     def get_culled_individuals(self):
         cull_rate = self._db.execute(
             """
@@ -260,12 +260,12 @@ class Specie:
         individuals, scores = self.get_sorted_individuals()
         individuals = individuals[:round(len(individuals) * cull_rate)]
         return individuals, scores[:len(individuals)]
-    
+
     @property
     def score(self):
         scores = self.get_culled_individuals()[1]
         return sum(scores) / len(scores)
-    
+
     def select_individual(self):
         individuals, scores = self.get_culled_individuals()
         individuals = deque(individuals)
@@ -277,7 +277,7 @@ class Specie:
             individual = individuals.popleft()
             current_score = scores.popleft()
         return individual
-    
+
     def create_newborn(self, species_set):
         species_set = species_set - self.id
         cloning_rate, interspecie_rate = self._db.execute(
@@ -285,7 +285,7 @@ class Specie:
             SELECT reproduction_cloning_rate, reproduction_interspecie_rate
             FROM model_metadata
         """)
-        
+
         if random.random() < cloning_rate:
             parent = Genotype(self._db, genotype_id=self.select_individual().genotype_id)
             newborn = parent.get_mutated()
@@ -294,7 +294,7 @@ class Specie:
                     'parent_genotype_ids': {parent.id, }
                 })
             return newborn
-        
+
         parent_2_specie = self
         if random.random() < interspecie_rate:
             parent_2_specie = Specie(self._db, specie_id=species_set.pop())
@@ -302,6 +302,6 @@ class Specie:
         parent_2 = parent_2_specie.select_individual()
         while parent_2 == parent_1 and len(self.individual_ids) > 2:
             parent_2 = parent_2_specie.select_individual()
-        
+
         newborn = Individual(self._db, individual_id=parent_1) + Individual(self._db, individual_id=parent_2)
         return newborn['genotype_kwargs']

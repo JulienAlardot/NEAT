@@ -12,7 +12,7 @@ class Genotype:
         parent_genotype_ids = [] if parent_genotype_ids is None else parent_genotype_ids
         if not (genotype_id or (node_ids and connection_dicts)):
             raise ValueError("Must specify either an existing genotype_id or both node_ids and connection_dicts")
-        
+
         if genotype_id:
             res = self._db.execute(
                 f"""
@@ -82,7 +82,7 @@ class Genotype:
             for connection in connection_dicts:
                 connection.update({'genotype_id': self.id})
                 self.connection_ids.add(Connection(self._db, **connection).id)
-    
+
     @property
     def historical_connection_ids(self):
         connection_ids = ', '.join((str(c_id) for c_id in self.connection_ids))
@@ -93,7 +93,7 @@ class Genotype:
         WHERE id IN ({connection_ids})
         """)
         return set((row[0] for row in res))
-    
+
     def __xor__(self, other):
         if not isinstance(other, Genotype):
             raise TypeError(
@@ -104,7 +104,7 @@ class Genotype:
         diff_connections = len(other.historical_connection_ids ^ self.historical_connection_ids)
         total_connections = max(len(other.historical_connection_ids), len(self.historical_connection_ids))
         return (total_nodes + total_connections - diff_nodes - diff_connections) / (total_nodes + total_connections)
-    
+
     def as_dict(self):
         connections = (Connection(self._db, connection_id=connection) for connection in sorted(self.connection_ids))
         return {
@@ -122,7 +122,7 @@ class Genotype:
             ),
             'parent_genotype_ids': self.parent_ids,
         }
-    
+
     def get_mutated(self):
         split_rate, weight_rate, add_rate, switch_rate, weight_std = self._db.execute(
             """
@@ -233,9 +233,9 @@ class Genotype:
         mutant['connection_dicts'] = tuple(new_connections)
         del mutant['genotype_id']
         return mutant
-    
+
     def draw(self, save_path=None):
-        
+
         # graph header declaration
         graph_lines = [
             'digraph {', '    rankdir = "LR"', '    splines = polyline', '    bgcolor = "invis"',
@@ -244,7 +244,7 @@ class Genotype:
             '    edge [arrowhead = onormal width = 0.1 tailport = e headclip = True tailclip = True penwidth = 0.5]',
             '',
         ]
-        
+
         # Assemble necessary node data
         node_mapping = {
             NodeTypes.bias: {},
@@ -254,7 +254,7 @@ class Genotype:
         }
         for node_id in sorted(self.node_ids):
             node_mapping[Node(self._db, node_id=node_id).node_type][node_id] = f"node_{node_id}"
-        
+
         # Add nodes declaration lines
         graph_lines += [
             '    subgraph {',
@@ -275,7 +275,7 @@ class Genotype:
         for node_id, name in node_mapping[NodeTypes.hidden].items():
             graph_lines.append(
                 f'    {name} [label = "{node_id}"]')
-        
+
         graph_lines += [
             '    }',
             '    subgraph {',
@@ -285,7 +285,7 @@ class Genotype:
         for node_id, name in node_mapping[NodeTypes.output].items():
             graph_lines.append(
                 f'    {name} [label = "{node_id}"]')
-        
+
         graph_lines.append('    }')
         # Assemble necessary connection data
         connection_mapping = {
@@ -319,12 +319,12 @@ class Genotype:
                 f'    node_{in_node_id} -> node_{out_node_id} [color = "{color}"]')
         # Add separator
         graph_lines.append('')
-        
+
         # Add connection declaration lines
         graph_lines += connection_mapping[NodeTypes.input]
         graph_lines += connection_mapping[NodeTypes.hidden]
         graph_lines += connection_mapping[NodeTypes.output]
-        
+
         "Close graph"
         graph_lines.append("}")
         graph_lines.append('')

@@ -19,7 +19,7 @@ class Population:
             """)
             if not res:
                 raise ValueError("Specified population_id doesn't exist")
-            
+
             self.id, self.generation_id = res[0]
             res = self._db.execute(
                 f"""
@@ -30,7 +30,7 @@ class Population:
             self.individual_ids = set((row[0] for row in res))
             if len(self) != self.model_pop_size:
                 raise SystemError("Size inconsistency between loaded individual_ids size and model metadata")
-        
+
         else:
             generation_id = Generation(self._db, generation_id=generation_id).id
             pop_size = self.model_pop_size  # Only need to fetch it once
@@ -46,10 +46,10 @@ class Population:
             for individual_dict in individual_dicts:
                 individual_dict["population_id"] = self.id
                 self.individual_ids.add(Individual(self._db, **individual_dict).id)
-    
+
     def __len__(self):
         return len(self.individual_ids)
-    
+
     @property
     def model_pop_size(self):
         res = self._db.execute(
@@ -62,7 +62,7 @@ class Population:
         if not res:
             raise ValueError("There must be at least one row in model_metadata table to fetch data from")
         return res[0][0]
-    
+
     @property
     def species(self):
         res = self._db.execute(
@@ -73,7 +73,7 @@ class Population:
         WHERE ind.population_id = {self.id}
         """)
         return set((row[0] for row in res))
-    
+
     @property
     def best_score(self):
         res = self._db.execute(

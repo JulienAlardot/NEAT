@@ -11,7 +11,7 @@ class Export(object):
         else:
             raise FileNotFoundError(f"The folderpath {folderpath} does not exist")
         self._genotypes = genotype_dicts
-    
+
     @staticmethod
     def _get_connection_color(weight, is_enabled):
         def convert_to_hex(value):
@@ -20,14 +20,14 @@ class Export(object):
             first_digit = color_dict[value // 36]
             second_digit = color_dict[value % 36]
             return f'{first_digit}{second_digit}'
-        
+
         if not is_enabled:
             return '#888888'
         blue = round(weight * 128) if weight > 0 else 0
         red = round(weight * 128) if weight < 0 else 0
-        
+
         return f'#{convert_to_hex(red)}00{convert_to_hex(blue)}'
-    
+
     @staticmethod
     def _render_nodes(genotype):
         input_node_lines, hidden_node_lines, output_node_lines = [], [], []
@@ -45,14 +45,14 @@ class Export(object):
                     hidden_node_lines.append(node_line.format(node.id))
                 case NodeTypes.output:
                     output_node_lines.append(node_line.format(node.id))
-        
+
         return {
             'bias_node': bias_node,
             'input_nodes': '\n    '.join(input_node_lines),
             'hidden_nodes': '\n    '.join(hidden_node_lines),
             'output_nodes': '\n    '.join(output_node_lines),
         }
-    
+
     @staticmethod
     def _render_connections(genotype):
         connection_lines = []
@@ -60,9 +60,9 @@ class Export(object):
             color = Export._get_connection_color(connection['weight'], connection['is_enabled'])
             connection_lines.append(
                 f'node_{connection["in_node_id"]} -> node_{connection["out_node_id"]} [color="{color}"]')
-        
+
         return '\n    '.join(connection_lines)
-    
+
     def _render(self, genotype):
         nodes = self._render_nodes(genotype)
         connections = self._render_connections(genotype)
@@ -94,7 +94,7 @@ class Export(object):
     {connections}
 }}
 """
-    
+
     def render(self):
         for genotype in self._genotypes:
             with open(os.path.join(self._folderpath, f'genotype_{genotype["genotype_id"]}.dot'), 'wt+') as gen_file:
