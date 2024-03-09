@@ -32,11 +32,13 @@ class NEATModel:
     def _initialize_population(self, pop_size):
         node_ids = set(self._input_node_ids + self._output_node_ids)
         bias_node_id = self.get_node(NodeTypes.bias).id
-        connections = ({"in_node_id": bias_node_id, "out_node_id": out_id, "weight": ((random.random() * 2) - 1)}
-                       for out_id in self._output_node_ids)
+        connections = (
+            {"in_node_id": bias_node_id, "out_node_id": out_id, "weight": ((random.random() * 2) - 1)}
+            for out_id in self._output_node_ids
+        )
         connections = tuple(connections)
         individual_dict = {'genotype_kwargs': {"node_ids": node_ids, "connection_dicts": connections}}
-        individual_dicts = (individual_dict for i in range(pop_size))
+        individual_dicts = (individual_dict for _ in range(pop_size))
 
         self._population = self.get_population(
             generation_id=self._generation.id, individual_dicts=tuple(

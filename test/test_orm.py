@@ -170,7 +170,7 @@ class TestGenotype(NEATBaseTestCase):
             Genotype(self._db, connection_dicts=connection_dicts)
 
         gen = Genotype(self._db, node_ids={1, 2, }, connection_dicts=connection_dicts)
-        self.assertEqual(1, HistoricalConnection(self._db, 1).id)
+        self.assertEqual(1, HistoricalConnection(self._db, historical_connection_id=1).id)
         self.assertEqual(1, Connection(self._db, historical_connection_id=1, genotype_id=gen.id).id)
         self.assertFalse(Connection(self._db, connection_id=1, genotype_id=gen.id).is_enabled)
         self.assertEqual(0.5, Connection(self._db, connection_id=1, genotype_id=gen.id).weight)
@@ -195,19 +195,19 @@ class TestGenotype(NEATBaseTestCase):
         )
         genode3 = Genotype(self._db, node_ids={1, 2, 3, 4, 5, 6, 7}, connection_dicts=connection_dicts_2)
         with self.assertRaises(TypeError):
-            _ = gen ^ {6, }
-        self.assertEqual(1.0, gen ^ genode2)
-        self.assertEqual(1 / 3, gen ^ genode3)
+            _ = gen & {6, }
+        self.assertEqual(1.0, gen & genode2)
+        self.assertEqual(1 / 3, gen & genode3)
         self.assertNotIn(new_node_id, gen.node_ids)
 
     def test_draw(self):
-        node_b = Node(self._db, 'bias')
-        node_i1 = Node(self._db, 'input')
-        node_i2 = Node(self._db, 'input')
-        node_h1 = Node(self._db, 'hidden')
-        node_h2 = Node(self._db, 'hidden')
-        node_o1 = Node(self._db, 'output')
-        node_o2 = Node(self._db, 'output')
+        node_b = Node(self._db, node_type='bias')
+        node_i1 = Node(self._db, node_type='input')
+        node_i2 = Node(self._db, node_type='input')
+        node_h1 = Node(self._db, node_type='hidden')
+        node_h2 = Node(self._db, node_type='hidden')
+        node_o1 = Node(self._db, node_type='output')
+        node_o2 = Node(self._db, node_type='output')
         connection_dicts = (
             {
                 'in_node_id': node_i1.id,
@@ -262,7 +262,7 @@ class TestGenotype(NEATBaseTestCase):
                 node_o1.id,
                 node_o2.id,
             },
-            connection_dicts=connection_dicts
+            connection_dicts=connection_dicts,
         )
         path = os.path.join(os.path.dirname(__file__), 'test_genome.dot')
         with open(path, 'rt', encoding='utf-8') as test:
@@ -391,17 +391,46 @@ class TestIndividual(NEATBaseTestCase):
             )
         }
         ind2 = Individual(self._db, genotype_kwargs=genotype_kwargs_2, population_id=1)
-        ind3 = Individual(**(ind1 + ind2))
+
+        ind3_kwargs = ind1 + ind2
+        self.assertDictEqual(
+            {
+                'db': self._db,
+                'genotype_id': None,
+                'genotype_kwargs': {
+                    'connection_dicts': (
+                        {
+                            'historical_connection_id': 1,
+                            'is_enabled': False,
+                            'weight': 0.5,
+                        },
+                    ),
+                    'node_ids': {2, 3},
+                    'parent_genotype_ids': {1, 2},
+                },
+                'individual_id': None,
+                'population_id': 1,
+                'score': None,
+                'specie_id': None,
+            },
+            ind3_kwargs,
+        )
+
+        ind3 = Individual(**ind3_kwargs)
+        self.assertNotEqual(ind1.id, ind3.id)
         self.assertNotEqual(ind2.id, ind3.id)
+        self.assertNotEqual(ind1.genotype_id, ind3.genotype_id)
         self.assertNotEqual(ind2.genotype_id, ind3.genotype_id)
+        self.assertEqual(ind1.population_id, ind3.population_id)
         self.assertEqual(ind2.population_id, ind3.population_id)
+        self.assertNotEqual(ind1.specie_id, ind3.specie_id)
         self.assertEqual(ind2.specie_id, ind3.specie_id)
         geno2 = Genotype(self._db, ind2.genotype_id)
         geno3 = Genotype(self._db, ind3.genotype_id)
         self.assertSetEqual(geno2.historical_connection_ids, geno3.historical_connection_ids)
         self.assertSetEqual(set(), geno2.connection_ids & geno3.connection_ids)
         self.assertSetEqual(geno2.node_ids, geno3.node_ids)
-        self.assertEqual(1, geno3 ^ geno2)
+        self.assertEqual(1, geno3 & geno2)
 
 
 class TestPopulation(NEATBaseTestCase):

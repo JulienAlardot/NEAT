@@ -41,7 +41,7 @@ class Population:
                 f"""
             SELECT id from population WHERE generation_id={generation_id} ORDER BY id DESC LIMIT 1
             """)
-            self.id = res[0][0]
+            self.id = res[0]
             self.generation_id = generation_id
             for individual_dict in individual_dicts:
                 individual_dict["population_id"] = self.id
@@ -61,7 +61,7 @@ class Population:
         """)
         if not res:
             raise ValueError("There must be at least one row in model_metadata table to fetch data from")
-        return res[0][0]
+        return res[0]
 
     @property
     def species(self):

@@ -12,7 +12,7 @@ class Generation:
             """)
             if not res:
                 raise ValueError("Specified generation_id doesn't exist")
-            self.id = res[0][0]
+            self.id = res[0]
         else:
             self._db.execute("""INSERT INTO generation DEFAULT VALUES""")
             res = self._db.execute("""SELECT MAX(id) FROM generation""")

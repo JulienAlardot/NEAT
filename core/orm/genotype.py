@@ -9,7 +9,7 @@ from core.orm.node import Node
 class Genotype:
     def __init__(self, db, genotype_id=None, node_ids=None, connection_dicts=None, parent_genotype_ids=None):
         self._db = db
-        parent_genotype_ids = [] if parent_genotype_ids is None else parent_genotype_ids
+        parent_genotype_ids = parent_genotype_ids or []
         if not (genotype_id or (node_ids and connection_dicts)):
             raise ValueError("Must specify either an existing genotype_id or both node_ids and connection_dicts")
 
@@ -24,7 +24,7 @@ class Genotype:
             """)
             if not res:
                 raise ValueError("Specified genotype_id doesn't exist")
-            self.id, *self.parent_ids = res[0]
+            self.id, *self.parent_ids = res
             self.parent_ids = set((parent for parent in self.parent_ids if parent))
             res = self._db.execute(
                 f"""
@@ -45,8 +45,9 @@ class Genotype:
                 """
             SELECT MAX(id)
             FROM genotype
+            LIMIT 1
             """)
-            self.id = (res[0][0] or 0) + 1
+            self.id = (res[0] or 0) + 1
             self.parent_ids = set((parent for parent in parent_genotype_ids if parent))
             parent_genotype_ids = list(sorted(self.parent_ids)) + ['NULL', 'NULL']
             self._db.execute(
@@ -94,10 +95,10 @@ class Genotype:
         """)
         return set((row[0] for row in res))
 
-    def __xor__(self, other):
+    def __and__(self, other):
         if not isinstance(other, Genotype):
             raise TypeError(
-                "Cannot use xor operator between an instance of 'Genotype' and an instance of another class"
+                "Cannot use and operator between an instance of 'Genotype' and an instance of another class"
             )
         diff_nodes = len(other.node_ids ^ self.node_ids)
         total_nodes = max(len(other.node_ids), len(self.node_ids))
@@ -113,7 +114,7 @@ class Genotype:
             'node_ids': self.node_ids,
             'connection_dicts': tuple(
                 {
-                    'historical_connection_id': connection.historical_id,
+                    'connection_id': connection.historical_id,
                     'in_node_id': connection.in_node,
                     'out_node_id': connection.out_node,
                     'weight': connection.weight,
@@ -149,9 +150,9 @@ class Genotype:
         add_connection_count = 0
         in_out_node_mapping = {}
         for connection in mutant.get('connection_dicts', []):
-            historical_id = connection['historical_connection_id']
+            historical_id = connection['connection_id']
             in_out_node_mapping.setdefault(connection['in_node_id'], []).append(connection['out_node_id'])
-            del connection['historical_connection_id']
+            del connection['connection_id']
             r = random.random()
             m_rate = weight_rate
             if r < m_rate:

@@ -30,10 +30,11 @@ class TestNeatModel(NEATBaseTestCaseMemory):
         self.assertSequenceEqual(((1, "Bias"), (2, "Input"), (3, "Hidden"), (4, "Output"),), res)
         
         res = self._db.execute("""SELECT id, node_type_id, connection_historical_id FROM node""")
-        self.assertSequenceEqual([
-            (i + 1, NodeTypes.bias if i < 1 else NodeTypes.input if i < 11 else NodeTypes.output, None)
-            for i in range(21)
-        ],
+        self.assertSequenceEqual(
+            [
+                (i + 1, NodeTypes.bias if i < 1 else NodeTypes.input if i < 11 else NodeTypes.output, None)
+                for i in range(21)
+            ],
             res,
         )
         

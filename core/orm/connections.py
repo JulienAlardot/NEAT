@@ -1,79 +1,97 @@
-class HistoricalConnection:
-    def __init__(self, db, historical_connection_id=None, in_node_id=None, out_node_id=None):
-        self._db = db
+from typing import Dict
 
+from core.orm import AbstractModelElement
+
+
+class HistoricalConnection(AbstractModelElement):
+    _table: str = 'connection_historical'
+    _columns: Dict[str, type] = {'id': int, 'in_node_id': int, 'out_node_id': int}
+    id: int
+    in_node: int
+    out_node: int
+
+    def __init__(self, db, historical_connection_id=None, in_node_id=None, out_node_id=None):
+        if not (historical_connection_id or (in_node_id and out_node_id)):
+            raise ValueError("Must be given either an existing historical_connection_id or in and out_node_id")
+
+        super().__init__(db)
+        res = None, None, None
         if historical_connection_id:
-            res = self._db.execute(
-                f"""
-            SELECT id, in_node_id, out_node_id
-            FROM connection_historical
-            WHERE id = {historical_connection_id}
-            LIMIT 1
-            """)
+            res = self._search_from_id(
+                historical_connection_id,
+                class_table=HistoricalConnection,
+            )
             if not res:
                 raise ValueError('No HistoricalConnection exists with that id')
-            self.id, self.in_node, self.out_node = res[0]
         elif in_node_id and out_node_id:
             if in_node_id == out_node_id:
                 raise ValueError("in_node_id and out_node_id must be different nodes")
+            res = self._search_from_data(
+                class_table=HistoricalConnection,
+                in_node_id=in_node_id,
+                out_node_id=out_node_id,
+            )
+            if not res:
+                res = self._create_historical_connection(in_node_id, out_node_id)
+            if not res:
+                raise ValueError("Incorrect values for in_node_id and/or out_node_id parameters")
+        self.id, self.in_node, self.out_node = res
 
-            res = self._db.execute(
-                f"""
-            SELECT id, in_node_id, out_node_id
-                FROM connection_historical
-                WHERE in_node_id = {in_node_id} AND out_node_id = {out_node_id}
-                LIMIT 1
-            """)
-            if res:
-                self.id, self.in_node, self.out_node = res[0]
-            else:
-                self._db.execute(
-                    f"""
+    def _create_historical_connection(self, in_node_id, out_node_id):
+        self._db.execute(
+            f"""
                 INSERT INTO connection_historical (in_node_id, out_node_id)
                     VALUES ({in_node_id}, {out_node_id})
-                """)
-                res = self._db.execute(
-                    f"""
-                    SELECT id
-                    FROM connection_historical
-                    WHERE in_node_id = {in_node_id} AND out_node_id = {out_node_id}
-                    ORDER BY id DESC
-                    LIMIT 1
-                """)
-                if not res:
-                    raise ValueError("Incorrect values for in_node_id and/or out_node_id parameters")
-                self.id = res[0][0]
-                self.in_node = in_node_id
-                self.out_node = out_node_id
-        else:
-            raise ValueError(
-                "A Connection must be given either an existing historical_connection_id or in and out_node_id")
+            """
+        )
+        return self._search_from_data(class_table=HistoricalConnection, in_node_id=in_node_id, out_node_id=out_node_id)
 
 
 class Connection(HistoricalConnection):
+    _table: str = 'connection'
+    _columns: Dict[str, type] = {
+        'id': int,
+        'genotype_id': int,
+        'weight': float,
+        'is_enabled': bool,
+        'historical_id': int,
+    }
+    genotype_id: int
+    is_enabled: bool
+    weight: float
+    in_node: int
+    out_node: int
+
     def __init__(
-            self, db, historical_connection_id=None, in_node_id=None, out_node_id=None,
-            genotype_id=None, connection_id=None, weight=None, is_enabled=None):
-        self._db = db
-        conn_id = None
+            self,
+            db,
+            historical_connection_id=None,
+            in_node_id=None,
+            out_node_id=None,
+            genotype_id=None,
+            connection_id=None,
+            weight=None,
+            is_enabled=None,
+    ):
         if not connection_id and not genotype_id:
             raise ValueError("Must specify a genotype_id or a connection_id")
+        if historical_connection_id or (in_node_id and out_node_id):
+            super().__init__(
+                db=db,
+                historical_connection_id=historical_connection_id,
+                in_node_id=in_node_id,
+                out_node_id=out_node_id,
+            )
+            self.historical_id = self.id
+        else:
+            AbstractModelElement.__init__(self, db=db)
 
         if connection_id:
-            res = self._db.execute(
-                f"""
-            SELECT id, genotype_id, weight, is_enabled, historical_id
-            FROM connection
-            WHERE id = {connection_id}
-            ORDER BY id DESC
-            LIMIT 1
-            """)
-            if not res:
-                raise ValueError("Specified connection_id doesn't exist")
-            conn_id, self.genotype_id, self._weight, self._is_enabled, historical_connection_id = res[0]
-        super().__init__(db, historical_connection_id, in_node_id, out_node_id)
-        self.historical_id = int(self.id)
-        self.id = conn_id
+            res = self._search_from_id(connection_id)
+            self.id, self.genotype_id, self._weight, self._is_enabled, self.historical_id = res
+            historical_connection = HistoricalConnection(self._db, historical_connection_id=self.historical_id)
+            self.in_node = historical_connection.in_node
+            self.out_node = historical_connection.out_node
 
         if not connection_id:
             res = self._db.execute(
@@ -97,7 +115,7 @@ class Connection(HistoricalConnection):
             """)
 
             if res:
-                self.id, self.genotype_id, self._is_enabled, self._weight = res[0]
+                self.id, self.genotype_id, self._is_enabled, self._weight = res
                 if is_enabled:
                     self.is_enabled = is_enabled
                 if weight:
@@ -123,10 +141,13 @@ class Connection(HistoricalConnection):
                 LIMIT 1
                 """)
 
-                self.id = res[0][0]
+                self.id = res[0]
                 self._weight = weight
                 self._is_enabled = is_enabled
                 self.genotype_id = genotype_id
+            historical_connection = HistoricalConnection(self._db, historical_connection_id=self.historical_id)
+            self.in_node = historical_connection.in_node
+            self.out_node = historical_connection.out_node
 
     @property
     def is_enabled(self):

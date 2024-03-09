@@ -18,7 +18,7 @@ class Node:
             """)
             if not res:
                 raise ValueError('No node exists with that id')
-            self.id, self.node_type, self.connection_historical = res[0]
+            self.id, self.node_type, self.connection_historical = res
         else:
             if not connection_historical_id and not node_type:
                 raise ValueError('A node must have a connection_historical_id or a node_type specified')
@@ -37,7 +37,8 @@ class Node:
                     FROM node
                     LEFT JOIN node_type nt on node.node_type_id = nt.id
                     WHERE nt.name = 'Bias'
-                """)[0][0]
+                    LIMIT 1
+                """)[0]
                 self.node_type = node_type
                 self.connection_historical = None
             else:
@@ -57,7 +58,7 @@ class Node:
                 """)
                 if not res:
                     raise ValueError('Incorrect node_type or connection_historical_id given')
-                self.id = res[0][0]
+                self.id = res[0]
                 self.node_type = node_type
                 self.connection_historical = connection_historical_id
 

@@ -8,6 +8,7 @@ class Individual:
     def __init__(
             self, db, individual_id=None, population_id=None, genotype_id=None, genotype_kwargs=None,
             specie_id=None, score=None):
+        genotype_kwargs = genotype_kwargs or {}
         self._db = db
         score = score or 0
         if not individual_id and (not population_id or not (genotype_id or genotype_kwargs)):
@@ -25,7 +26,7 @@ class Individual:
             """)
             if not res:
                 raise ValueError("Specified individual_id doesn't exist")
-            self.id, self.genotype_id, self.specie_id, self._score, self.population_id = res[0]
+            self.id, self.genotype_id, self.specie_id, self._score, self.population_id = res
 
         else:
             test_exists = {"population": population_id}
@@ -47,11 +48,10 @@ class Individual:
                 if not res:
                     raise ValueError(f"Specified {table}_id doesn't exist")
 
-            if not genotype_id and genotype_kwargs:
-                genotype_id = Genotype(self._db, **genotype_kwargs).id
+            genotype = Genotype(self._db, genotype_id=genotype_id, **genotype_kwargs)
+            genotype_id = genotype_id or genotype.id
 
             if not specie_id:  # Find specie
-                genotype = Genotype(self._db, genotype_id=genotype_id)
                 res = self._db.execute(
                     f"""
                 SELECT gen.id AS genotype_id,
@@ -66,7 +66,7 @@ class Individual:
                     best_result = min(1., max(0., 1. - self.speciation_threshold))
                     for other_id, other_specie_id in res:
                         other_genotype = Genotype(self._db, genotype_id=other_id)
-                        genotypes_similarity = genotype ^ other_genotype
+                        genotypes_similarity = genotype & other_genotype
                         if genotypes_similarity > best_result:
                             best_specie_id = other_specie_id
                             best_result = genotypes_similarity
@@ -93,7 +93,7 @@ class Individual:
             LIMIT 1
             """)
 
-            self.id = res[0][0]
+            self.id = res[0]
             self.population_id = population_id
             self._score = score
             self.specie_id = specie_id
@@ -116,10 +116,10 @@ class Individual:
         other_genotype = Genotype(db, other.genotype_id)
 
         inner_hist_conn_ids = self_genotype.historical_connection_ids & other_genotype.historical_connection_ids
-        outer_hist_conn_ids = self_genotype.historical_connection_ids | other_genotype.historical_connection_ids
+        outer_hist_conn_ids = self_genotype.historical_connection_ids ^ other_genotype.historical_connection_ids
         hist_conn_ids = set(inner_hist_conn_ids)
 
-        for conn_id in (outer_hist_conn_ids - inner_hist_conn_ids):
+        for conn_id in outer_hist_conn_ids:
             if bool(round(random.random())):
                 hist_conn_ids.add(conn_id)
 
@@ -149,7 +149,7 @@ class Individual:
                 {
                     'historical_connection_id': hist_conn_id,
                     'weight': weight,
-                    'is_enabled': is_enabled,
+                    'is_enabled': bool(is_enabled),
                 })
 
         return {
@@ -177,7 +177,7 @@ class Individual:
         """)
         if not res:
             raise ValueError("There must be at least one row in model_metadata table to fetch data from")
-        return res[0][0]
+        return res[0]
 
     @property
     def score_raw(self):
@@ -213,7 +213,7 @@ class Specie:
             """)
             if not res:
                 raise ValueError("Specified specie_id doesn't exist")
-            self.id = res[0][0]
+            self.id = res[0]
         else:
             self._db.execute("""INSERT INTO specie DEFAULT VALUES""")
             res = self._db.execute("""SELECT MAX(id) FROM specie""")
@@ -256,7 +256,7 @@ class Specie:
             FROM model_metadata
             ORDER BY id
             LIMIT 1
-        """)[0][0]
+        """)[0]
         individuals, scores = self.get_sorted_individuals()
         individuals = individuals[:round(len(individuals) * cull_rate)]
         return individuals, scores[:len(individuals)]
